@@ -62,7 +62,7 @@ internal class App
         }
 
         await _client.SetWebhookAsync(
-            _configuration.ExternalHost + _configuration.Route.TrimStart('/'),
+            _configuration.ListeningAddress + _configuration.Route.TrimStart('/'),
             allowedUpdates: new UpdateType[] { UpdateType.Message },
             dropPendingUpdates: true);
 

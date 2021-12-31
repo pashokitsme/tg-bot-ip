@@ -18,12 +18,12 @@ internal class TelegramBotApiListener
     public TelegramBotApiListener(TelegramBotConfiguration configuration)
     {
         _configuration = configuration;
-        _listener.Prefixes.Add(_configuration.InternalHost);
+        _listener.Prefixes.Add(_configuration.Host);
     }
 
     public async Task StartAsync()
     {
-        Logger.Log($"Listening started up on: {_configuration.InternalHost}. Expected route {_configuration.Route}");
+        Logger.Log($"Listening started up on: {_configuration.Host}. Expected route {_configuration.Route}");
 
         _listener.Start();
 

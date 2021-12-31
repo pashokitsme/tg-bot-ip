@@ -8,11 +8,11 @@ internal class TelegramBotConfiguration
     [JsonProperty("bot-token"), JsonRequired]
     public string Token { get; set; } = "<your token>";
 
-    [JsonProperty("internal-host"), JsonRequired]
-    public string InternalHost { get; set; } = "https://example.com/";
+    [JsonProperty("host"), JsonRequired]
+    public string Host { get; set; } = "https://example.com/";
    
-    [JsonProperty("external-host"), JsonRequired]
-    public string ExternalHost { get; set; } = "https://example.com/";
+    [JsonProperty("listening-address"), JsonRequired]
+    public string ListeningAddress { get; set; } = "https://example.com/";
 
     [JsonProperty("route"), JsonRequired]
     public string Route { get; set; } = "/<your route>/";
