@@ -3,72 +3,68 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Example
+namespace Example;
+internal class App
 {
-    internal class App
+    private readonly string _configurationPath = "config.json";
+
+    private readonly TelegramBotConfiguration _configuration;
+    private readonly TelegramBotApiListener _listener;
+    private readonly TelegramBotClient _client;
+
+    public App()
     {
-        private readonly string _configurationPath = "config.yaml";
+        _configuration = TelegramBotConfiguration.Get(_configurationPath);
+        _listener = new TelegramBotApiListener(_configuration);
+        _client = new TelegramBotClient(_configuration.Token);
 
-        private readonly TelegramBotConfiguration _configuration;
-        private readonly TelegramBotApiListener _listener;
-        private readonly TelegramBotClient _client;
-
-        public App()
+        _listener.UpdateReceived += update => OnUpdateReceived(_client, update);
+        _listener.Stopped += () =>
         {
-            _configuration = TelegramBotConfiguration.Deserialize(_configurationPath);
-            _listener = new TelegramBotApiListener(_configuration);
-            _client = new TelegramBotClient(_configuration.Token);
+            _client.DeleteWebhookAsync();
+            Logger.Log("Webhook deleted");
+        };
+    }
 
-            _listener.UpdateReceived += update => OnUpdateReceived(_client, update);
-            _listener.Stopped += () =>
-            {
-                _client.DeleteWebhookAsync();
-                Logger.Log("Webhook deleted");
-            };
+    public async void StartAsync()
+    {
+        await SetupWebhookAsync();
+    }
+
+    public void Stop()
+    {
+        _listener.Stop();
+    }
+
+    private async void OnUpdateReceived(TelegramBotClient client, Update update)
+    {
+        var message = update.Message;
+
+        if (message == null)
+        {
+            Logger.Log("Message is null", LogSeverity.ERROR);
+            return;
         }
 
-        public async void StartAsync()
-        {
-            var success = await SetupWebhookAsync();
-            if(success == false)
-            {
-                Logger.Log("API token invalid", LogSeverity.ERROR);
-                return;
-            }
+        await client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
+    }
 
-            _listener.StartAsync();
+    private async Task SetupWebhookAsync()
+    {
+        if (await _client.TestApiAsync() == false)
+        {
+            Logger.Log("API Token invalid", LogSeverity.ERROR);
+            return;
         }
 
-        public void Stop()
-        {
-            _listener.Stop();
-        }
+        await _client.SetWebhookAsync(
+            _configuration.Host + _configuration.Route.TrimStart('/'),
+            allowedUpdates: new UpdateType[] { UpdateType.Message },
+            dropPendingUpdates: true);
 
-        private async void OnUpdateReceived(TelegramBotClient client, Update update)
-        {
-            var message = update.Message;
+        var webhook = await _client.GetWebhookInfoAsync();
 
-            if(message == null)
-            {
-                Logger.Log("Message is null", LogSeverity.ERROR);
-                return;
-            }
-
-            await client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
-        }
-
-        private async Task<bool> SetupWebhookAsync()
-        {
-            await _client.SetWebhookAsync(
-                _configuration.Host + _configuration.Route.TrimStart('/'),
-                allowedUpdates: new UpdateType[] { UpdateType.Message },
-                dropPendingUpdates: true);
-
-            var webhook = await _client.GetWebhookInfoAsync();
-
-            Logger.Log($"Webhook binded to {webhook.Url}");
-
-            return await _client.TestApiAsync();
-        }
+        Logger.Log($"Webhook binded to {webhook.Url}");
     }
 }
+

@@ -26,7 +26,6 @@ internal class TelegramBotApiListener
 
         Logger.Log($"Listening started up on: {_configuration.Host}. Expected route {_configuration.Route}");
 
-
         while (_stop == false)
         {
             var context = await _listener.GetContextAsync();

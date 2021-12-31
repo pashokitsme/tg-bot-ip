@@ -4,10 +4,12 @@ using Telegram.Bot;
 namespace Example;
 public static class Program
 {
-    public static void Main(string[] args)
+    public static void Main()
     {
         Logger.Log("Starting! Press any key to exit");
-        new App().StartAsync();
+        var app = new App();
+        app.StartAsync();
         Console.ReadKey();
+        app.Stop();
     }
 }

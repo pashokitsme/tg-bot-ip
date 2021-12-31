@@ -1,34 +1,44 @@
-﻿using YamlDotNet.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace Example.Core;
 
 internal class TelegramBotConfiguration
 {
-    [YamlMember(Alias = "bot-token")]
+    [JsonProperty("bot-token"), JsonRequired]
     public string Token { get; set; } = "<your token>";
 
-    [YamlMember(Alias = "host")]
+    [JsonProperty("host"), JsonRequired]
     public string Host { get; set; } = "https://example.com/";
 
-    [YamlMember(Alias = "route")]
+    [JsonProperty("route"), JsonRequired]
     public string Route { get; set; } = "/<your route>/";
 
-    public static TelegramBotConfiguration Deserialize(string path)
+    public static TelegramBotConfiguration Get(string path)
     {
-        var deserializer = new DeserializerBuilder().Build();
-
         if (File.Exists(path) == false)
         {
-            var serializer = new SerializerBuilder().Build();
-            var config = new TelegramBotConfiguration();
-            File.WriteAllText(path, serializer.Serialize(config));
-
-            return config;
+            Logger.Log($"Configuration file is not exists ({path})", LogSeverity.ERROR);
+            return CreateNew(path);
         }
 
-        var yaml = File.ReadAllText(path);
+        var json = File.ReadAllText(path);
+        var result = JsonConvert.DeserializeObject<TelegramBotConfiguration>(json);
 
-        return deserializer.Deserialize<TelegramBotConfiguration>(yaml);
+        if (result == null)
+        {
+            Logger.Log($"Can't parse configuration file: {path}", LogSeverity.ERROR);
+            return CreateNew(path);
+        }
+
+        return result;
+    }
+
+    public static TelegramBotConfiguration CreateNew(string path)
+    {
+        Logger.Log("Creating new configuration file");
+        var config = new TelegramBotConfiguration();
+        File.WriteAllText(path, JsonConvert.SerializeObject(config, Formatting.Indented));
+        return config;
     }
 }
 
