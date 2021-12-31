@@ -9,7 +9,7 @@ public static class Program
         Logger.Log("Starting! Press any key to exit");
         var app = new App();
         app.StartAsync();
-        Console.ReadKey();
+        Console.ReadKey(false);
         app.Stop();
     }
 }

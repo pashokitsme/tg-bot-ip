@@ -19,6 +19,7 @@ internal class App
         _client = new TelegramBotClient(_configuration.Token);
 
         _listener.UpdateReceived += update => OnUpdateReceived(_client, update);
+
         _listener.Stopped += () =>
         {
             _client.DeleteWebhookAsync();
@@ -29,6 +30,7 @@ internal class App
     public async void StartAsync()
     {
         await SetupWebhookAsync();
+        _listener.StartAsync();
     }
 
     public void Stop()
@@ -58,7 +60,7 @@ internal class App
         }
 
         await _client.SetWebhookAsync(
-            _configuration.Host + _configuration.Route.TrimStart('/'),
+            _configuration.ExternalHost + _configuration.Route.TrimStart('/'),
             allowedUpdates: new UpdateType[] { UpdateType.Message },
             dropPendingUpdates: true);
 

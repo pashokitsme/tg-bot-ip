@@ -7,13 +7,13 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<StartupObject>Example.Program</StartupObject>
-		<DebugType>none</DebugType>
+		<DebugType>full</DebugType>
 		<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
 		<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<Optimize>True</Optimize>
+		<Optimize>False</Optimize>
 		<FileAlignment>512</FileAlignment>
 	</PropertyGroup>
 

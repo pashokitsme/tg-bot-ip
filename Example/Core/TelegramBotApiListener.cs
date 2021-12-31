@@ -17,14 +17,14 @@ internal class TelegramBotApiListener
     public TelegramBotApiListener(TelegramBotConfiguration configuration)
     {
         _configuration = configuration;
-        _listener.Prefixes.Add(_configuration.Host);
+        _listener.Prefixes.Add(_configuration.InternalHost);
     }
 
     public async void StartAsync()
     {
-        _listener.Start();
+        Logger.Log($"Listening started up on: {_configuration.InternalHost}. Expected route {_configuration.Route}");
 
-        Logger.Log($"Listening started up on: {_configuration.Host}. Expected route {_configuration.Route}");
+        _listener.Start();
 
         while (_stop == false)
         {
@@ -51,7 +51,7 @@ internal class TelegramBotApiListener
 
         Logger.Log($"{request.HttpMethod} request on: {request.Url.AbsolutePath} by {request.RemoteEndPoint}");
 
-        if (request.HttpMethod != "Post")
+        if (request.HttpMethod != "POST")
         {
             Logger.Log($"Method {request.HttpMethod} is not allowed", LogSeverity.WARNING);
             context.Response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
@@ -59,7 +59,7 @@ internal class TelegramBotApiListener
             return;
         }
 
-        switch (request.Url.AbsolutePath)
+        switch (request.Url.AbsolutePath.TrimEnd('/'))
         {
             case "/update":
                 UpdateValidate(request);
