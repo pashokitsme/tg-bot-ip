@@ -1,4 +1,5 @@
 ﻿using Example.Core;
+using Example.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -27,10 +28,10 @@ internal class App
         };
     }
 
-    public async void StartAsync()
+    public async Task StartAsync()
     {
         await SetupWebhookAsync();
-        _listener.StartAsync();
+        await _listener.StartAsync();
     }
 
     public void Stop()
@@ -48,6 +49,7 @@ internal class App
             return;
         }
 
+        Logger.Log($"Reply to message {message.Text} by {message.From?.Username}");
         await client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
     }
 

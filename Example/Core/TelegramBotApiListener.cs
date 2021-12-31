@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Example.Logging;
+using Newtonsoft.Json;
 using System.Net;
 using System.Text;
 using Telegram.Bot.Types;
@@ -20,7 +21,7 @@ internal class TelegramBotApiListener
         _listener.Prefixes.Add(_configuration.InternalHost);
     }
 
-    public async void StartAsync()
+    public async Task StartAsync()
     {
         Logger.Log($"Listening started up on: {_configuration.InternalHost}. Expected route {_configuration.Route}");
 
@@ -28,8 +29,12 @@ internal class TelegramBotApiListener
 
         while (_stop == false)
         {
-            var context = await _listener.GetContextAsync();
-            PreprocessReceivedRequest(context);
+            try
+            {
+                var context = await _listener.GetContextAsync();
+                PreprocessReceivedRequest(context);
+            }
+            catch (HttpListenerException) { }
         }
 
         Logger.Log("Listening stopped");
@@ -49,7 +54,7 @@ internal class TelegramBotApiListener
         if (request.Url == null)
             return;
 
-        Logger.Log($"{request.HttpMethod} request on: {request.Url.AbsolutePath} by {request.RemoteEndPoint}");
+        Logger.Log($"{request.HttpMethod} request: {request.Url.AbsolutePath}");
 
         if (request.HttpMethod != "POST")
         {
