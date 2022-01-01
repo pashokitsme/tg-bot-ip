@@ -5,7 +5,7 @@ using Telegram.Bot.Types;
 
 namespace Example.Commands;
 
-public delegate void ExecuteChatCommand(TelegramBotClient client, Message message);
+public delegate void ExecuteChatCommand(ChatCommandContext context);
 
 [AttributeUsage(AttributeTargets.Method)]
 public class ChatCommandAttribute : Attribute
@@ -13,10 +13,29 @@ public class ChatCommandAttribute : Attribute
     public string Name { get; private set; }
     public string Description { get; private set; }
 
-    public ChatCommandAttribute(string name, string desc = "")
+    public ChatCommandAttribute(string name, string desc)
     {
+        if (name == "" || desc == "")
+            throw new ArgumentException("Name and description of command can't be empty");
+
         Name = name;
         Description = desc;
+    }
+}
+
+public class ChatCommandContext
+{
+    public TelegramBotClient Client { get; private set; }
+    public Message Message { get; private set; }
+    public string[] Args { get; private set; }
+
+    public ChatCommandContext(TelegramBotClient client, Message message)
+    {
+        Client = client;
+        Message = message;
+        var splitted = message.Text!.Split(' ');
+        Args = new string[splitted.Length - 1];
+        Array.Copy(splitted, 1, Args, 0, splitted.Length - 1);
     }
 }
 
@@ -37,7 +56,7 @@ internal class ChatCommandInfo
 
     public async Task ExecuteAsync(TelegramBotClient client, Message message)
     {
-        await Task.Run(() => _command(client, message));
+        await Task.Run(() => _command(new ChatCommandContext(client, message)));
     }
 }
 
@@ -72,9 +91,10 @@ internal class ChatCommandProvider
     public BotCommand[] GetBotCommands()
     {
         var result = new BotCommand[_commands.Count];
+        var index = 0;
         foreach (var command in _commands)
         {
-            result[0] = new BotCommand()
+            result[index++] = new BotCommand()
             {
                 Command = command.Name,
                 Description = command.Description
@@ -97,6 +117,7 @@ internal class ChatCommandProvider
         foreach (var method in methodInfos)
             result.Add(new ChatCommandInfo(method.CreateDelegate<ExecuteChatCommand>(), method.GetCustomAttribute<ChatCommandAttribute>()!));
 
+        Logger.Log($"Loaded {result.Count} commands: {string.Join(", ", result.Select(x => x.Name))}");
         return result;
     }
 }

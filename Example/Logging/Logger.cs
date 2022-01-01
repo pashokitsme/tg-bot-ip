@@ -1,4 +1,6 @@
-﻿namespace Example.Logging;
+﻿using System.Diagnostics;
+
+namespace Example.Logging;
 
 internal enum LogSeverity
 {
@@ -9,12 +11,7 @@ internal enum LogSeverity
 
 internal static class Logger
 {
-    public static void Log(string message)
-    {
-        Log(message, LogSeverity.INFO);
-    }
-
-    public static void Log(string message, LogSeverity severity)
+    public static void Log(string message, LogSeverity severity = LogSeverity.INFO)
     {
         Console.ForegroundColor = severity switch
         {
@@ -23,7 +20,7 @@ internal static class Logger
             _ => Console.ForegroundColor
         };
 
-        Console.WriteLine($"{DateTime.Now} : {message}");
+        Console.WriteLine($"{DateTime.Now:HH:mm:ss} : {message}");
         Console.ResetColor();
     }
 }
