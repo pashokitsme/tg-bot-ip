@@ -102,7 +102,7 @@ internal class ChatCommandProvider
         return result;
     }
 
-    private HashSet<ChatCommandInfo> ResolveCommandMethods()
+    private static HashSet<ChatCommandInfo> ResolveCommandMethods()
     {
         var methodInfos = Assembly
             .GetExecutingAssembly()

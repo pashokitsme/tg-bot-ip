@@ -16,6 +16,7 @@ internal class TestCommand
     public static async Task<bool> Test2(ChatCommandContext context)
     {
         await context.Client.SendTextMessageAsync(context.Message.Chat.Id, $"А это вторая тестовая команда!");
+        await context.Client.SendVenueAsync(context.Message.Chat.Id, 56.06906198865623, 47.24778056589566, "Title", "Адрес");
         return false;
     }
 

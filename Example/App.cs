@@ -13,16 +13,18 @@ internal class App
     private readonly TelegramBotConfiguration _configuration;
     private readonly TelegramBotApiListener _listener;
     private readonly TelegramBotClient _client;
-    private readonly ChatCommandProvider _provider;
+    private readonly ChatCommandProvider _commandProvider;
+    private readonly UpdateHandler _handler;
 
     public App()
     {
         _configuration = TelegramBotConfiguration.Get(_configurationPath);
         _listener = new TelegramBotApiListener(_configuration);
         _client = new TelegramBotClient(_configuration.Token);
-        _provider = new ChatCommandProvider(_client, '/');
+        _commandProvider = new ChatCommandProvider(_client, '/');
+        _handler = new UpdateHandler(_client, _commandProvider);
 
-        _listener.UpdateReceived += update => OnUpdateReceived(_client, update);
+        _listener.UpdateReceived += update => OnUpdateReceived(update);
 
         _listener.Stopped += () =>
         {
@@ -43,28 +45,15 @@ internal class App
         _listener.Stop();
     }
 
-    private async void OnUpdateReceived(TelegramBotClient client, Update update)
+    private Task OnUpdateReceived(Update update)
     {
-        var message = update.Message;
-
-        if (message == null || message.Text == null || message.Text.Length < 1)
+        return update.Type switch
         {
-            Logger.Log("Message is invalid", LogSeverity.ERROR);
-            return;
-        }
-
-        if (message.Text[0] == _provider.Prefix)
-        {
-
-            var result = _provider.TryExecuteCommand(message.Text.Split(' ')[0], message);
-
-            if (result == false)
-                await _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
-            return;
-        }
-
-        Logger.Log($"Reply to message {message.Text} by {message.From?.Username}");
-        await client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
+            UpdateType.Message => _handler.OnMessageReceivedAsync(update.Message!),
+            UpdateType.InlineQuery => _handler.OnInlineQueryReceived(update.InlineQuery!),
+            UpdateType.ChosenInlineResult => _handler.OnChoosedInlineResultReceived(update.ChosenInlineResult!),
+            _ => throw new NotImplementedException()
+        };
     }
 
     private async Task SetupWebhookAsync()
@@ -77,7 +66,7 @@ internal class App
 
         await _client.SetWebhookAsync(
             _configuration.Host + _configuration.Route.TrimStart('/'),
-            allowedUpdates: new UpdateType[] { UpdateType.Message },
+            allowedUpdates: new UpdateType[] { UpdateType.Message, UpdateType.InlineQuery, UpdateType.ChosenInlineResult },
             dropPendingUpdates: true);
 
         var webhook = await _client.GetWebhookInfoAsync();
@@ -87,7 +76,7 @@ internal class App
 
     private async Task SetupBotCommands()
     {
-        var commands = _provider.GetBotCommands();
+        var commands = _commandProvider.GetBotCommands();
         await _client.SetMyCommandsAsync(commands);
         Logger.Log($"Setted up {commands.Length} commands");
     }
