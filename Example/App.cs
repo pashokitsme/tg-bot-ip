@@ -55,8 +55,11 @@ internal class App
 
         if (message.Text[0] == _provider.Prefix)
         {
-            
-            await _provider.TryExecuteCommandAsync(message.Text.Split(' ')[0], message);
+
+            var result = _provider.TryExecuteCommand(message.Text.Split(' ')[0], message);
+
+            if (result == false)
+                await _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
             return;
         }
 

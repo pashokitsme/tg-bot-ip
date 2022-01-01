@@ -5,7 +5,7 @@ using Telegram.Bot.Types;
 
 namespace Example.Commands;
 
-public delegate void ExecuteChatCommand(ChatCommandContext context);
+public delegate Task<bool> ExecuteChatCommand(ChatCommandContext context);
 
 [AttributeUsage(AttributeTargets.Method)]
 public class ChatCommandAttribute : Attribute
@@ -44,7 +44,6 @@ internal class ChatCommandInfo
     public string Name => _attribute.Name;
     public string Description => _attribute.Description;
 
-
     private readonly ExecuteChatCommand _command;
     private readonly ChatCommandAttribute _attribute;
 
@@ -54,9 +53,9 @@ internal class ChatCommandInfo
         _attribute = attribute;
     }
 
-    public async Task ExecuteAsync(TelegramBotClient client, Message message)
+    public bool ExecuteAsync(TelegramBotClient client, Message message)
     {
-        await Task.Run(() => _command(new ChatCommandContext(client, message)));
+        return _command(new ChatCommandContext(client, message)).GetAwaiter().GetResult();
     }
 }
 
@@ -75,17 +74,16 @@ internal class ChatCommandProvider
         _commands = ResolveCommandMethods();
     }
 
-    public async Task<bool> TryExecuteCommandAsync(string name, Message message)
+    public bool TryExecuteCommand(string name, Message message)
     {
         name = name.TrimStart(_prefix);
         var command = _commands.FirstOrDefault(cmd => string.Compare(cmd.Name, name, StringComparison.OrdinalIgnoreCase) == 0);
 
-        if (command == null)
+        if (command == default)
             return false;
 
         Logger.Log($"{message.From!.Username} executing command {command.Name}");
-        await command.ExecuteAsync(_client, message);
-        return true;
+        return command.ExecuteAsync(_client, message);
     }
 
     public BotCommand[] GetBotCommands()
