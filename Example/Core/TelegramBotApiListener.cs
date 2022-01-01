@@ -50,12 +50,8 @@ internal class TelegramBotApiListener
     private void PreprocessReceivedRequest(HttpListenerContext context)
     {
         var request = context.Request;
-
-        if (request.Url == null)
-            return;
-
-        Logger.Log($"{request.HttpMethod} request: {request.Url.AbsolutePath}");
-
+        Logger.Log($"{request.HttpMethod} request: {request.Url!.AbsolutePath}");
+        
         if (request.HttpMethod != "POST")
         {
             Logger.Log($"Method {request.HttpMethod} is not allowed", LogSeverity.WARNING);
@@ -64,17 +60,15 @@ internal class TelegramBotApiListener
             return;
         }
 
-        switch (request.Url.AbsolutePath.TrimEnd('/'))
+        if (request.Url.AbsolutePath == _configuration.Route)
         {
-            case "/update":
-                ProcessUpdateRequest(request);
-                context.Response.StatusCode = (int)HttpStatusCode.OK;
-                break;
-
-            default:
-                Logger.Log($"Route {request.Url.AbsolutePath} not defined", LogSeverity.WARNING);
-                context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-                break;
+            ProcessUpdateRequest(request);
+            context.Response.StatusCode = (int)HttpStatusCode.OK;
+        }
+        else
+        {
+            Logger.Log($"Route {request.Url.AbsolutePath} not defined", LogSeverity.WARNING);
+            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
         }
 
         CommitResponse(context);
