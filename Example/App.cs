@@ -1,4 +1,5 @@
-﻿using Example.Core;
+﻿using Example.Commands;
+using Example.Core;
 using Example.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -12,12 +13,14 @@ internal class App
     private readonly TelegramBotConfiguration _configuration;
     private readonly TelegramBotApiListener _listener;
     private readonly TelegramBotClient _client;
+    private readonly ChatCommandProvider _provider;
 
     public App()
     {
         _configuration = TelegramBotConfiguration.Get(_configurationPath);
         _listener = new TelegramBotApiListener(_configuration);
         _client = new TelegramBotClient(_configuration.Token);
+        _provider = new ChatCommandProvider(_client, '/');
 
         _listener.UpdateReceived += update => OnUpdateReceived(_client, update);
 
@@ -31,6 +34,7 @@ internal class App
     public async Task StartAsync()
     {
         await SetupWebhookAsync();
+        await SetupBotCommands();
         await _listener.StartAsync();
     }
 
@@ -43,9 +47,16 @@ internal class App
     {
         var message = update.Message;
 
-        if (message == null)
+        if (message == null || message.Text == null || message.Text.Length < 1)
         {
-            Logger.Log("Message is null", LogSeverity.ERROR);
+            Logger.Log("Message is invalid", LogSeverity.ERROR);
+            return;
+        }
+
+        if (message.Text[0] == _provider.Prefix)
+        {
+            
+            await _provider.TryExecuteCommandAsync(message.Text.Split(' ')[0], message);
             return;
         }
 
@@ -62,13 +73,20 @@ internal class App
         }
 
         await _client.SetWebhookAsync(
-            _configuration.ListeningAddress + _configuration.Route.TrimStart('/'),
+            _configuration.Host + _configuration.Route.TrimStart('/'),
             allowedUpdates: new UpdateType[] { UpdateType.Message },
             dropPendingUpdates: true);
 
         var webhook = await _client.GetWebhookInfoAsync();
 
         Logger.Log($"Webhook binded to {webhook.Url}");
+    }
+
+    private async Task SetupBotCommands()
+    {
+        var commands = _provider.GetBotCommands();
+        await _client.SetMyCommandsAsync(commands);
+        Logger.Log($"Setted up {commands.Length} commands");
     }
 }
 

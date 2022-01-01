@@ -18,12 +18,12 @@ internal class TelegramBotApiListener
     public TelegramBotApiListener(TelegramBotConfiguration configuration)
     {
         _configuration = configuration;
-        _listener.Prefixes.Add(_configuration.Host);
+        _listener.Prefixes.Add(_configuration.ListeningAddress);
     }
 
     public async Task StartAsync()
     {
-        Logger.Log($"Listening started up on: {_configuration.Host}. Expected route {_configuration.Route}");
+        Logger.Log($"Listening started up on: {_configuration.ListeningAddress}. Expected route {_configuration.Route}");
 
         _listener.Start();
 
@@ -67,7 +67,7 @@ internal class TelegramBotApiListener
         switch (request.Url.AbsolutePath.TrimEnd('/'))
         {
             case "/update":
-                UpdateValidate(request);
+                ProcessUpdateRequest(request);
                 context.Response.StatusCode = (int)HttpStatusCode.OK;
                 break;
 
@@ -80,7 +80,7 @@ internal class TelegramBotApiListener
         CommitResponse(context);
     }
 
-    private async void UpdateValidate(HttpListenerRequest request)
+    private async void ProcessUpdateRequest(HttpListenerRequest request)
     {
         using var reader = new StreamReader(request.InputStream, request.ContentEncoding);
         var json = await reader.ReadToEndAsync();

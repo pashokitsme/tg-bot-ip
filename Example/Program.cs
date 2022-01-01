@@ -3,6 +3,8 @@
 namespace Example;
 public static class Program
 {
+    private static bool _alreadyStopped = false;
+
     public static async Task Main()
     {
         Logger.Log("Starting! Press CTRL+C to exit");
@@ -16,6 +18,10 @@ public static class Program
 
     private static void OnStop(App app)
     {
+        if (_alreadyStopped)
+            return;
+
+        _alreadyStopped = true;
         app.Stop();
     }
 }

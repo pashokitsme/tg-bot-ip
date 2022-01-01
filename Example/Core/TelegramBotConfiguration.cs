@@ -12,7 +12,7 @@ internal class TelegramBotConfiguration
     public string Host { get; set; } = "https://example.com/";
    
     [JsonProperty("listening-address"), JsonRequired]
-    public string ListeningAddress { get; set; } = "https://example.com/";
+    public string ListeningAddress { get; set; } = "http://localhost:5000/";
 
     [JsonProperty("route"), JsonRequired]
     public string Route { get; set; } = "/<your route>/";
