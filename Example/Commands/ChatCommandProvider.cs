@@ -61,29 +61,30 @@ internal class ChatCommandInfo
 
 internal class ChatCommandProvider
 {
-    public char Prefix => _prefix;
-
     private readonly HashSet<ChatCommandInfo> _commands;
-    private readonly char _prefix;
     private readonly TelegramBotClient _client;
 
-    public ChatCommandProvider(TelegramBotClient client, char prefix)
+    public ChatCommandProvider(TelegramBotClient client)
     {
         _client = client;
-        _prefix = prefix;
         _commands = ResolveCommandMethods();
     }
 
     public bool TryExecuteCommand(string name, Message message)
     {
-        name = name.TrimStart(_prefix);
+        name = name.TrimStart('/');
         var command = _commands.FirstOrDefault(cmd => string.Compare(cmd.Name, name, StringComparison.OrdinalIgnoreCase) == 0);
 
         if (command == default)
             return false;
 
         Logger.Log($"{message.From!.Username} executing command {command.Name}");
-        return command.ExecuteAsync(_client, message);
+        var result = command.ExecuteAsync(_client, message);
+
+        if (result == false)
+            Logger.Log($"{message.From.Username} tried to execute {command.Name} but it's failed", LogSeverity.WARNING);
+
+        return result;
     }
 
     public BotCommand[] GetBotCommands()

@@ -6,16 +6,16 @@ namespace Example.Core;
 internal class TelegramBotConfiguration
 {
     [JsonProperty("bot-token"), JsonRequired]
-    public string Token { get; set; } = "<your token>";
+    public string Token { get; set; } = "<your_token>";
 
-    [JsonProperty("host"), JsonRequired]
-    public string Host { get; set; } = "https://example.com/";
+    [JsonProperty("webhook"), JsonRequired]
+    public string Webhook { get; set; } = "https://example.com/<your_route>/";
    
-    [JsonProperty("listening-address"), JsonRequired]
-    public string ListeningAddress { get; set; } = "http://localhost:5000/";
+    [JsonProperty("listening-port"), JsonRequired]
+    public int ListeningPort { get; set; } = 5000;
 
     [JsonProperty("route"), JsonRequired]
-    public string Route { get; set; } = "/<your route>/";
+    public string Route { get; set; } = "/<your_route>/";
 
     public static TelegramBotConfiguration Get(string path)
     {

@@ -5,7 +5,7 @@ using System.Text;
 using Telegram.Bot.Types;
 
 namespace Example.Core;
-internal class TelegramBotApiListener
+internal class TelegramApiListener
 {
     public event Action<Update>? UpdateReceived;
     public event Action? Stopped;
@@ -15,15 +15,15 @@ internal class TelegramBotApiListener
 
     private bool _stop = false;
 
-    public TelegramBotApiListener(TelegramBotConfiguration configuration)
+    public TelegramApiListener(TelegramBotConfiguration configuration)
     {
         _configuration = configuration;
-        _listener.Prefixes.Add(_configuration.ListeningAddress);
+        _listener.Prefixes.Add($"http://localhost:{_configuration.ListeningPort}/");
     }
 
     public async Task StartAsync()
     {
-        Logger.Log($"Listening started up on: {_configuration.ListeningAddress}. Expected route {_configuration.Route}");
+        Logger.Log($"Listening port {_configuration.ListeningPort}. Expected route {_configuration.Route}");
 
         _listener.Start();
 
@@ -50,7 +50,7 @@ internal class TelegramBotApiListener
     private void PreprocessReceivedRequest(HttpListenerContext context)
     {
         var request = context.Request;
-        Logger.Log($"{request.HttpMethod} request: {request.Url!.AbsolutePath}");
+        Logger.Log($"{request.HttpMethod} {request.Url!.AbsolutePath}");
         
         if (request.HttpMethod != "POST")
         {
@@ -67,7 +67,7 @@ internal class TelegramBotApiListener
         }
         else
         {
-            Logger.Log($"Route {request.Url.AbsolutePath} not defined", LogSeverity.WARNING);
+            Logger.Log($"Route {request.Url.AbsolutePath} is invalid", LogSeverity.WARNING);
             context.Response.StatusCode = (int)HttpStatusCode.NotFound;
         }
 
@@ -87,7 +87,7 @@ internal class TelegramBotApiListener
             return;
         }
 
-        Logger.Log($"Received invalid update by {request.RemoteEndPoint}", LogSeverity.WARNING);
+        Logger.Log($"Received invalid update by {request.RemoteEndPoint.Address}", LogSeverity.WARNING);
     }
 
     private static void CommitResponse(HttpListenerContext context, string response = "")

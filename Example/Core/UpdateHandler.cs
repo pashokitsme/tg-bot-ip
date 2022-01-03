@@ -25,7 +25,7 @@ namespace Example.Core
                 return;
             }
 
-            if (message.Text[0] == _commandProvider.Prefix)
+            if (message.Text[0] == '/')
             {
                 var result = _commandProvider.TryExecuteCommand(message.Text.Split(' ')[0], message);
 
@@ -46,14 +46,12 @@ namespace Example.Core
                 new InlineQueryResultArticle("address", "ТестТест", new InputVenueMessageContent("Title", "Адрес", 56.06906198865623, 47.24778056589566)),
                 new InlineQueryResultArticle("another_address", "ТестТыест", new InputVenueMessageContent("Titleвыаф", "Другой адрес", 58.06906198865623, 42.24778056589566)),
                 new InlineQueryResultArticle("text", "ТестТыест", new InputTextMessageContent("Какой то текст"))
+                {
+                    Description = "описание"
+                }
             };
 
             await _client.AnswerInlineQueryAsync(query.Id, results);
-        }
-
-        public async Task OnChoosedInlineResultReceived(ChosenInlineResult result)
-        {
-            Logger.Log($"Received inline result: {result.Query}");
         }
     }
 }

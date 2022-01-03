@@ -8,21 +8,18 @@ using Telegram.Bot.Types.Enums;
 namespace Example;
 internal class App
 {
-    private readonly string _configurationPath = "config.json";
-
-    private readonly TelegramBotConfiguration _configuration;
-    private readonly TelegramBotApiListener _listener;
+    private readonly TelegramBotConfiguration _configuration = TelegramBotConfiguration.Get("config.json");
+    private readonly TelegramApiListener _listener;
     private readonly TelegramBotClient _client;
     private readonly ChatCommandProvider _commandProvider;
-    private readonly UpdateHandler _handler;
+    private readonly UpdateHandler _updateHandler;
 
     public App()
     {
-        _configuration = TelegramBotConfiguration.Get(_configurationPath);
-        _listener = new TelegramBotApiListener(_configuration);
+        _listener = new TelegramApiListener(_configuration);
         _client = new TelegramBotClient(_configuration.Token);
-        _commandProvider = new ChatCommandProvider(_client, '/');
-        _handler = new UpdateHandler(_client, _commandProvider);
+        _commandProvider = new ChatCommandProvider(_client);
+        _updateHandler = new UpdateHandler(_client, _commandProvider);
 
         _listener.UpdateReceived += update => OnUpdateReceived(update);
 
@@ -49,9 +46,8 @@ internal class App
     {
         return update.Type switch
         {
-            UpdateType.Message => _handler.OnMessageReceivedAsync(update.Message!),
-            UpdateType.InlineQuery => _handler.OnInlineQueryReceived(update.InlineQuery!),
-            UpdateType.ChosenInlineResult => _handler.OnChoosedInlineResultReceived(update.ChosenInlineResult!),
+            UpdateType.Message => _updateHandler.OnMessageReceivedAsync(update.Message!),
+            UpdateType.InlineQuery => _updateHandler.OnInlineQueryReceived(update.InlineQuery!),
             _ => throw new NotImplementedException()
         };
     }
@@ -65,8 +61,8 @@ internal class App
         }
 
         await _client.SetWebhookAsync(
-            _configuration.Host + _configuration.Route.TrimStart('/'),
-            allowedUpdates: new UpdateType[] { UpdateType.Message, UpdateType.InlineQuery, UpdateType.ChosenInlineResult },
+            _configuration.Webhook,
+            allowedUpdates: new UpdateType[] { UpdateType.Message, UpdateType.InlineQuery },
             dropPendingUpdates: true);
 
         var webhook = await _client.GetWebhookInfoAsync();
