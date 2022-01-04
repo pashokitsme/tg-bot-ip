@@ -1,7 +1,7 @@
 ﻿using Telegram.Bot;
 
 namespace Example.Commands;
-internal class TestCommand
+internal static class TestCommands
 {
     [ChatCommand("test", "тестовая команда")]
     public static async Task<bool> Test(ChatCommandContext context)
@@ -10,9 +10,10 @@ internal class TestCommand
         return true;
     }
 
-    [ChatCommand("ne_test", "тестовая команда, всегда неправильная")]
+    [ChatCommand("ne_test", "тестовая команда")]
     public static async Task<bool> Test2(ChatCommandContext context)
     {
+        await context.Client.SendPollAsync(context.Message.Chat.Id, "вопрос", new List<string>() { "1", "2", "три" }, isAnonymous: true);
         return false;
     }
 

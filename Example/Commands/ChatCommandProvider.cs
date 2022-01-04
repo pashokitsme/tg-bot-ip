@@ -12,14 +12,16 @@ public class ChatCommandAttribute : Attribute
 {
     public string Name { get; private set; }
     public string Description { get; private set; }
+    public bool Hidden { get; private set; }
 
-    public ChatCommandAttribute(string name, string desc)
+    public ChatCommandAttribute(string name, string desc, bool hidden = false)
     {
         if (name == "" || desc == "")
             throw new ArgumentException("Name and description of command can't be empty");
 
         Name = name;
         Description = desc;
+        Hidden = hidden;
     }
 }
 
@@ -43,6 +45,7 @@ internal class ChatCommandInfo
 {
     public string Name => _attribute.Name;
     public string Description => _attribute.Description;
+    public bool Hidden => _attribute.Hidden;
 
     private readonly ExecuteChatCommand _command;
     private readonly ChatCommandAttribute _attribute;
@@ -89,9 +92,10 @@ internal class ChatCommandProvider
 
     public BotCommand[] GetBotCommands()
     {
-        var result = new BotCommand[_commands.Count];
+        var commands = _commands.Where(x => x.Hidden == false);
+        var result = new BotCommand[commands.Count()];
         var index = 0;
-        foreach (var command in _commands)
+        foreach (var command in commands)
         {
             result[index++] = new BotCommand()
             {
@@ -117,6 +121,8 @@ internal class ChatCommandProvider
             result.Add(new ChatCommandInfo(method.CreateDelegate<ExecuteChatCommand>(), method.GetCustomAttribute<ChatCommandAttribute>()!));
 
         Logger.Log($"Loaded {result.Count} commands: {string.Join(", ", result.Select(x => x.Name))}");
+        var hidden = result.Where(x => x.Hidden == true);
+        Logger.Log($"{hidden.Count()} hidden commands: {string.Join(", ", hidden.Select(x => x.Name))}");
         return result;
     }
 }

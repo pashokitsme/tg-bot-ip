@@ -50,8 +50,10 @@ internal class TelegramApiListener
     private void PreprocessReceivedRequest(HttpListenerContext context)
     {
         var request = context.Request;
-        Logger.Log($"{request.HttpMethod} {request.Url!.AbsolutePath}");
-        
+
+        if (request.Url == null)
+            return;
+
         if (request.HttpMethod != "POST")
         {
             Logger.Log($"Method {request.HttpMethod} is not allowed", LogSeverity.WARNING);
@@ -64,12 +66,11 @@ internal class TelegramApiListener
         {
             ProcessUpdateRequest(request);
             context.Response.StatusCode = (int)HttpStatusCode.OK;
+            CommitResponse(context);
         }
-        else
-        {
-            Logger.Log($"Route {request.Url.AbsolutePath} is invalid", LogSeverity.WARNING);
-            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-        }
+
+        Logger.Log($"Route {request.Url.AbsolutePath} is invalid", LogSeverity.WARNING);
+        context.Response.StatusCode = (int)HttpStatusCode.NotFound;
 
         CommitResponse(context);
     }

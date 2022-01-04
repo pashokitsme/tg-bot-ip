@@ -25,6 +25,7 @@ namespace Example.Core
                 return;
             }
 
+
             if (message.Text[0] == '/')
             {
                 var result = _commandProvider.TryExecuteCommand(message.Text.Split(' ')[0], message);

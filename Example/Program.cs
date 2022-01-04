@@ -1,9 +1,14 @@
 ﻿using Example.Logging;
+using Telegram.Bot.Types.Enums;
 
 namespace Example;
 public static class Program
 {
     private static bool _alreadyStopped = false;
+    private static readonly UpdateType[] _allowedUpdates = new UpdateType[]
+    {
+        UpdateType.Message
+    };
 
     public static async Task Main()
     {
@@ -13,7 +18,7 @@ public static class Program
         AppDomain.CurrentDomain.ProcessExit += (sender, args) => OnStop(app);
         Console.CancelKeyPress += (sender, args) => OnStop(app);
 
-        await app.StartAsync();
+        await app.StartAsync(_allowedUpdates);
     }
 
     private static void OnStop(App app)

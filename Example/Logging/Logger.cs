@@ -12,10 +12,8 @@ internal enum LogSeverity
 
 internal static class Logger
 {
-
     public static void Log(string message, LogSeverity severity = LogSeverity.INFO)
     {
-
         Console.ForegroundColor = severity switch
         {
             LogSeverity.WARNING => ConsoleColor.Yellow,

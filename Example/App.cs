@@ -30,17 +30,14 @@ internal class App
         };
     }
 
-    public async Task StartAsync()
+    public async Task StartAsync(UpdateType[] allowedUpdates)
     {
-        await SetupWebhookAsync();
+        await SetupWebhookAsync(allowedUpdates);
         await SetupBotCommands();
         await _listener.StartAsync();
     }
 
-    public void Stop()
-    {
-        _listener.Stop();
-    }
+    public void Stop() => _listener.Stop();
 
     private Task OnUpdateReceived(Update update)
     {
@@ -52,7 +49,7 @@ internal class App
         };
     }
 
-    private async Task SetupWebhookAsync()
+    private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)
     {
         if (await _client.TestApiAsync() == false)
         {
@@ -62,7 +59,7 @@ internal class App
 
         await _client.SetWebhookAsync(
             _configuration.Webhook,
-            allowedUpdates: new UpdateType[] { UpdateType.Message, UpdateType.InlineQuery },
+            allowedUpdates: allowedUpdates,
             dropPendingUpdates: true);
 
         var webhook = await _client.GetWebhookInfoAsync();
