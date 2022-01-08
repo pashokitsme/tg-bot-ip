@@ -8,12 +8,9 @@ namespace Example.Core;
 internal class TelegramApiListener
 {
     public event Action<Update>? UpdateReceived;
-    public event Action? Stopped;
 
     private readonly HttpListener _listener = new();
     private readonly TelegramBotConfiguration _configuration;
-
-    private bool _stop = false;
 
     public TelegramApiListener(TelegramBotConfiguration configuration)
     {
@@ -27,7 +24,7 @@ internal class TelegramApiListener
 
         _listener.Start();
 
-        while (_stop == false)
+        while (true)
         {
             try
             {
@@ -36,15 +33,12 @@ internal class TelegramApiListener
             }
             catch (HttpListenerException) { }
         }
-
-        Logger.Log("Listening stopped");
     }
 
     public void Stop()
     {
-        _stop = true;
         _listener.Stop();
-        Stopped?.Invoke();
+        Logger.Log("Listening stopped");
     }
 
     private void PreprocessReceivedRequest(HttpListenerContext context)
@@ -62,11 +56,12 @@ internal class TelegramApiListener
             return;
         }
 
-        if (request.Url.AbsolutePath == _configuration.Route)
+        if (request.Url.AbsolutePath.TrimEnd('/') == _configuration.Route.TrimEnd('/'))
         {
             ProcessUpdateRequest(request);
             context.Response.StatusCode = (int)HttpStatusCode.OK;
             CommitResponse(context);
+            return;
         }
 
         Logger.Log($"Route {request.Url.AbsolutePath} is invalid", LogSeverity.WARNING);

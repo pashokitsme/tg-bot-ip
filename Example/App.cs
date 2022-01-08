@@ -6,57 +6,56 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace Example;
-internal class App
+public class App
 {
     private readonly TelegramBotConfiguration _configuration = TelegramBotConfiguration.Get("config.json");
     private readonly TelegramApiListener _listener;
     private readonly TelegramBotClient _client;
-    private readonly ChatCommandProvider _commandProvider;
+    private readonly ChatCommandManager _commandManager;
     private readonly UpdateHandler _updateHandler;
 
     public App()
     {
         _listener = new TelegramApiListener(_configuration);
         _client = new TelegramBotClient(_configuration.Token);
-        _commandProvider = new ChatCommandProvider(_client);
-        _updateHandler = new UpdateHandler(_client, _commandProvider);
+        _commandManager = new ChatCommandManager(_client);
+        _updateHandler = new UpdateHandler(_client, _commandManager);
 
         _listener.UpdateReceived += update => OnUpdateReceived(update);
-
-        _listener.Stopped += () =>
-        {
-            _client.DeleteWebhookAsync();
-            Logger.Log("Webhook deleted");
-        };
     }
 
-    public async Task StartAsync(UpdateType[] allowedUpdates)
+    public async void StartAsync(UpdateType[] allowedUpdates)
     {
         await SetupWebhookAsync(allowedUpdates);
-        await SetupBotCommands();
+        await SetupBotCommandsAsync();
         await _listener.StartAsync();
     }
 
-    public void Stop() => _listener.Stop();
-
-    private Task OnUpdateReceived(Update update)
+    public void Stop()
     {
-        return update.Type switch
+        RemoveWebhookAsync().Wait();
+        _listener.Stop();
+    }
+
+    private void OnUpdateReceived(Update update)
+    {
+        switch (update.Type)
         {
-            UpdateType.Message => _updateHandler.OnMessageReceivedAsync(update.Message!),
-            UpdateType.InlineQuery => _updateHandler.OnInlineQueryReceived(update.InlineQuery!),
-            _ => throw new NotImplementedException()
-        };
+            case UpdateType.Message:
+                _updateHandler.OnMessageReceivedAsync(update.Message!);
+                return;
+
+            case UpdateType.InlineQuery:
+                _updateHandler.OnInlineQueryReceived(update.InlineQuery!);
+                return;
+
+            default:
+                throw new NotImplementedException();
+        }
     }
 
     private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)
     {
-        if (await _client.TestApiAsync() == false)
-        {
-            Logger.Log("API Token invalid", LogSeverity.ERROR);
-            return;
-        }
-
         await _client.SetWebhookAsync(
             _configuration.Webhook,
             allowedUpdates: allowedUpdates,
@@ -67,11 +66,17 @@ internal class App
         Logger.Log($"Webhook binded to {webhook.Url}");
     }
 
-    private async Task SetupBotCommands()
+    private async Task SetupBotCommandsAsync()
     {
-        var commands = _commandProvider.GetBotCommands();
+        var commands = _commandManager.GetBotCommands();
         await _client.SetMyCommandsAsync(commands);
         Logger.Log($"Setted up {commands.Length} commands");
     }
-}
 
+    private async Task RemoveWebhookAsync()
+    {
+        var info = await _client.GetWebhookInfoAsync();
+        await _client.DeleteWebhookAsync(true);
+        Logger.Log($"Webhook removed: {info.Url}");
+    }
+}

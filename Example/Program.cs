@@ -7,10 +7,11 @@ public static class Program
     private static bool _alreadyStopped = false;
     private static readonly UpdateType[] _allowedUpdates = new UpdateType[]
     {
-        UpdateType.Message
+        UpdateType.Message,
+        UpdateType.InlineQuery
     };
 
-    public static async Task Main()
+    public static void Main()
     {
         Logger.Log("Starting! Press CTRL+C to exit");
         var app = new App();
@@ -18,7 +19,9 @@ public static class Program
         AppDomain.CurrentDomain.ProcessExit += (sender, args) => OnStop(app);
         Console.CancelKeyPress += (sender, args) => OnStop(app);
 
-        await app.StartAsync(_allowedUpdates);
+        app.StartAsync(_allowedUpdates);
+
+        Thread.Sleep(-1);
     }
 
     private static void OnStop(App app)

@@ -1,16 +1,13 @@
-﻿using System.Diagnostics;
-using System.Text;
+﻿namespace Example.Logging;
 
-namespace Example.Logging;
-
-internal enum LogSeverity
+public enum LogSeverity
 {
     INFO,
     WARNING,
     ERROR
 }
 
-internal static class Logger
+public static class Logger
 {
     public static void Log(string message, LogSeverity severity = LogSeverity.INFO)
     {

@@ -5,7 +5,7 @@ using Telegram.Bot.Types;
 
 namespace Example.Commands;
 
-public delegate Task<bool> ExecuteChatCommand(ChatCommandContext context);
+internal delegate Task<bool> ExecuteChatCommand(ChatCommandContext context);
 
 [AttributeUsage(AttributeTargets.Method)]
 public class ChatCommandAttribute : Attribute
@@ -56,33 +56,33 @@ internal class ChatCommandInfo
         _attribute = attribute;
     }
 
-    public bool ExecuteAsync(TelegramBotClient client, Message message)
+    public bool Execute(TelegramBotClient client, Message message)
     {
         return _command(new ChatCommandContext(client, message)).GetAwaiter().GetResult();
     }
 }
 
-internal class ChatCommandProvider
+public class ChatCommandManager
 {
     private readonly HashSet<ChatCommandInfo> _commands;
     private readonly TelegramBotClient _client;
 
-    public ChatCommandProvider(TelegramBotClient client)
+    public ChatCommandManager(TelegramBotClient client)
     {
         _client = client;
         _commands = ResolveCommandMethods();
     }
 
-    public bool TryExecuteCommand(string name, Message message)
+    public bool TryExecuteCommand(string commandString, Message message)
     {
-        name = name.TrimStart('/');
-        var command = _commands.FirstOrDefault(cmd => string.Compare(cmd.Name, name, StringComparison.OrdinalIgnoreCase) == 0);
+        commandString = commandString.TrimStart('/');
+        var command = _commands.FirstOrDefault(cmd => string.Compare(cmd.Name, commandString, StringComparison.OrdinalIgnoreCase) == 0);
 
         if (command == default)
             return false;
 
         Logger.Log($"{message.From!.Username} executing command {command.Name}");
-        var result = command.ExecuteAsync(_client, message);
+        var result = command.Execute(_client, message);
 
         if (result == false)
             Logger.Log($"{message.From.Username} tried to execute {command.Name} but it's failed", LogSeverity.WARNING);
@@ -109,7 +109,8 @@ internal class ChatCommandProvider
 
     private static HashSet<ChatCommandInfo> ResolveCommandMethods()
     {
-        var methodInfos = Assembly
+        var methodInfos = 
+            Assembly
             .GetExecutingAssembly()
             .GetTypes()
             .SelectMany(type => type.GetMethods())
@@ -120,8 +121,8 @@ internal class ChatCommandProvider
         foreach (var method in methodInfos)
             result.Add(new ChatCommandInfo(method.CreateDelegate<ExecuteChatCommand>(), method.GetCustomAttribute<ChatCommandAttribute>()!));
 
-        Logger.Log($"Loaded {result.Count} commands: {string.Join(", ", result.Select(x => x.Name))}");
         var hidden = result.Where(x => x.Hidden == true);
+        Logger.Log($"Loaded {result.Count} commands: {string.Join(", ", result.Select(x => x.Name))}");
         Logger.Log($"{hidden.Count()} hidden commands: {string.Join(", ", hidden.Select(x => x.Name))}");
         return result;
     }
