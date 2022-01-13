@@ -5,6 +5,7 @@ using System.Text;
 using Telegram.Bot.Types;
 
 namespace Example.Core;
+
 internal class TelegramApiListener
 {
     public event Action<Update>? UpdateReceived;
@@ -28,8 +29,7 @@ internal class TelegramApiListener
         {
             try
             {
-                var context = await _listener.GetContextAsync();
-                PreprocessReceivedRequest(context);
+                ProcessRequest(await _listener.GetContextAsync());
             }
             catch (HttpListenerException) { }
         }
@@ -41,7 +41,7 @@ internal class TelegramApiListener
         Logger.Log("Listening stopped");
     }
 
-    private void PreprocessReceivedRequest(HttpListenerContext context)
+    private void ProcessRequest(HttpListenerContext context)
     {
         var request = context.Request;
 
@@ -58,7 +58,7 @@ internal class TelegramApiListener
 
         if (request.Url.AbsolutePath.TrimEnd('/') == _configuration.Route.TrimEnd('/'))
         {
-            ProcessUpdateRequest(request);
+            HandleUpdateRequest(request);
             context.Response.StatusCode = (int)HttpStatusCode.OK;
             CommitResponse(context);
             return;
@@ -70,7 +70,7 @@ internal class TelegramApiListener
         CommitResponse(context);
     }
 
-    private async void ProcessUpdateRequest(HttpListenerRequest request)
+    private async void HandleUpdateRequest(HttpListenerRequest request)
     {
         using var reader = new StreamReader(request.InputStream, request.ContentEncoding);
         var json = await reader.ReadToEndAsync();

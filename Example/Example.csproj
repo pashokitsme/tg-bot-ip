@@ -10,6 +10,9 @@
 		<DebugType>full</DebugType>
 		<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
 		<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+		<EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild>
+		<AllowUnsafeBlocks>False</AllowUnsafeBlocks>
+		<PlatformTarget>AnyCPU</PlatformTarget>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

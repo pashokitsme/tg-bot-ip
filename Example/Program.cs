@@ -2,6 +2,7 @@
 using Telegram.Bot.Types.Enums;
 
 namespace Example;
+
 public static class Program
 {
     private static bool _alreadyStopped = false;
@@ -14,11 +15,10 @@ public static class Program
     public static void Main()
     {
         Logger.Log("Starting! Press CTRL+C to exit");
-        var app = new App();
 
+        var app = new App();
         AppDomain.CurrentDomain.ProcessExit += (sender, args) => OnStop(app);
         Console.CancelKeyPress += (sender, args) => OnStop(app);
-
         app.StartAsync(_allowedUpdates);
 
         Thread.Sleep(-1);

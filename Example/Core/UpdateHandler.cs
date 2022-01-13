@@ -5,52 +5,51 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
 
-namespace Example.Core
+namespace Example.Core;
+
+internal class UpdateHandler
 {
-    internal class UpdateHandler
+    private readonly TelegramBotClient _client;
+    private readonly ChatCommandManager _commandManager;
+
+    public UpdateHandler(TelegramBotClient client, ChatCommandManager provider)
     {
-        private readonly TelegramBotClient _client;
-        private readonly ChatCommandManager _commandManager;
+        _client = client;
+        _commandManager = provider;
+    }
 
-        public UpdateHandler(TelegramBotClient client, ChatCommandManager provider)
+    public async void OnMessageReceivedAsync(Message message)
+    {
+        if(message.Type != MessageType.Text || message.Text == null)
         {
-            _client = client;
-            _commandManager = provider;
+            Logger.Log($"Message should be Text Message, not {message.Type}", LogSeverity.ERROR);
+            return;
         }
 
-        public async void OnMessageReceivedAsync(Message message)
+        if (message.Text[0] == '/')
         {
-            if(message.Type != MessageType.Text || message.Text == null)
+            var result = _commandManager.TryExecuteCommand(message.Text.Split(' ')[0], message);
+
+            if (result == false)
+                await _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
+            return;
+        }
+
+        Logger.Log($"Reply to message {message.Text} by {message.From?.Username}");
+        await _client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
+    }
+
+    public async void OnInlineQueryReceived(InlineQuery query)
+    {
+        Logger.Log($"Received inline query");
+        var results = new List<InlineQueryResult>()
+        {
+            new InlineQueryResultArticle("text", "Текст", new InputTextMessageContent("Какой то текст"))
             {
-                Logger.Log($"Message should be Text Message, not {message.Type}", LogSeverity.ERROR);
-                return;
+                Description = "описание"
             }
+        };
 
-            if (message.Text[0] == '/')
-            {
-                var result = _commandManager.TryExecuteCommand(message.Text.Split(' ')[0], message);
-
-                if (result == false)
-                    await _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
-                return;
-            }
-
-            Logger.Log($"Reply to message {message.Text} by {message.From?.Username}");
-            await _client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
-        }
-
-        public async void OnInlineQueryReceived(InlineQuery query)
-        {
-            Logger.Log($"Received inline query");
-            var results = new List<InlineQueryResult>()
-            {
-                new InlineQueryResultArticle("text", "Текст", new InputTextMessageContent("Какой то текст"))
-                {
-                    Description = "описание"
-                }
-            };
-
-            await _client.AnswerInlineQueryAsync(query.Id, results);
-        }
+        await _client.AnswerInlineQueryAsync(query.Id, results);
     }
 }

@@ -6,6 +6,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace Example;
+
 public class App
 {
     private readonly TelegramBotConfiguration _configuration = TelegramBotConfiguration.Get("config.json");
@@ -21,7 +22,7 @@ public class App
         _commandManager = new ChatCommandManager(_client);
         _updateHandler = new UpdateHandler(_client, _commandManager);
 
-        _listener.UpdateReceived += update => OnUpdateReceived(update);
+        _listener.UpdateReceived += OnUpdateReceived;
     }
 
     public async void StartAsync(UpdateType[] allowedUpdates)
@@ -75,8 +76,7 @@ public class App
 
     private async Task RemoveWebhookAsync()
     {
-        var info = await _client.GetWebhookInfoAsync();
         await _client.DeleteWebhookAsync(true);
-        Logger.Log($"Webhook removed: {info.Url}");
+        Logger.Log($"Webhook removed");
     }
 }
