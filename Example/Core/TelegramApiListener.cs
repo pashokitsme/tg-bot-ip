@@ -22,7 +22,6 @@ internal class TelegramApiListener
     public void Start()
     {
         Logger.Log($"Listening port {_configuration.ListeningPort}. Expected route {_configuration.Route}");
-
         _listener.Start();
         _listener.BeginGetContext(OnReceivedRequest, _listener);
     }
@@ -46,7 +45,7 @@ internal class TelegramApiListener
 
         if (request.HttpMethod != "POST")
         {
-            Logger.Log($"{request.UserHostName} request with method {request.HttpMethod}, but required {HttpMethod.Post}", LogSeverity.ERROR);
+            Logger.Log($"Request by {GetIPv4(request)} with method {request.HttpMethod} but required {HttpMethod.Post}", LogSeverity.ERROR);
 
             SetResponse(response, HttpStatusCode.MethodNotAllowed);
             return;
@@ -54,7 +53,7 @@ internal class TelegramApiListener
 
         if (request.Url.AbsolutePath.TrimEnd('/') != _configuration.Route.TrimEnd('/'))
         {
-            Logger.Log($"{request.UserHostName} tried to access {request.Url.AbsolutePath}, but not found", LogSeverity.ERROR);
+            Logger.Log($"{GetIPv4(request)} tried to access {request.Url.AbsolutePath} but not found", LogSeverity.ERROR);
             SetResponse(response, HttpStatusCode.NotFound);
             return;
         }
@@ -66,19 +65,28 @@ internal class TelegramApiListener
     private async Task<HttpStatusCode> TryParseUpdate(HttpListenerRequest request)
     {
         using var reader = new StreamReader(request.InputStream, request.ContentEncoding);
-        var json = await reader.ReadToEndAsync();
-
-        var update = JsonConvert.DeserializeObject<Update>(json);
-
-        if (update != null)
+        try
         {
-            UpdateReceived?.Invoke(update);
-            return HttpStatusCode.OK;
-        }
+            var json = await reader.ReadToEndAsync();
+            var update = JsonConvert.DeserializeObject<Update>(json);
 
-        Logger.Log($"Received invalid update by {request.RemoteEndPoint.Address}", LogSeverity.ERROR);
-        return HttpStatusCode.BadRequest;
+            if (update != null)
+            {
+                UpdateReceived?.Invoke(update);
+                Logger.Log($"Received update by {GetIPv4(request)}");
+                return HttpStatusCode.OK;
+            }
+
+            throw new NullReferenceException(nameof(update));
+        }
+        catch (Exception)
+        {
+            Logger.Log($"Received invalid update by {GetIPv4(request)}", LogSeverity.ERROR);
+            return HttpStatusCode.BadRequest;
+        }
     }
+
+    private static IPAddress GetIPv4(HttpListenerRequest request) => request.RemoteEndPoint.Address.MapToIPv4();
 
     private static void SetResponse(HttpListenerResponse response, HttpStatusCode statusCode, string message = "")
     {

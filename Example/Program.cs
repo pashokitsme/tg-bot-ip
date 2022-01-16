@@ -18,9 +18,15 @@ public static class Program
         var app = new App();
         AppDomain.CurrentDomain.ProcessExit += (sender, args) => OnStop(app);
         Console.CancelKeyPress += (sender, args) => OnStop(app);
-        app.StartAsync(_allowedUpdates);
+        AppDomain.CurrentDomain.UnhandledException += OnException;
 
+        app.StartAsync(_allowedUpdates);
         Thread.Sleep(-1);
+    }
+
+    private static void OnException(object sender, UnhandledExceptionEventArgs args)
+    {
+        Logger.Log($"Unhandled Exception!", LogSeverity.ERROR);
     }
 
     private static void OnStop(App app)
