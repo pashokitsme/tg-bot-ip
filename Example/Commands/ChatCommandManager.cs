@@ -35,7 +35,7 @@ public class ChatCommandContext
     {
         Client = client;
         Message = message;
-        var splitted = message.Text!.Split(' ');
+        var splitted = message.Text.Split(' ');
         Args = new string[splitted.Length - 1];
         Array.Copy(splitted, 1, Args, 0, splitted.Length - 1);
     }
@@ -109,7 +109,7 @@ public class ChatCommandManager
 
     private static HashSet<ChatCommandInfo> ResolveCommandMethods()
     {
-        var methodInfos = 
+        var methodInfos =
             Assembly
             .GetExecutingAssembly()
             .GetTypes()
@@ -119,7 +119,16 @@ public class ChatCommandManager
         var result = new HashSet<ChatCommandInfo>();
 
         foreach (var method in methodInfos)
-            result.Add(new ChatCommandInfo(method.CreateDelegate<ExecuteChatCommand>(), method.GetCustomAttribute<ChatCommandAttribute>()!));
+        {
+            var command = Delegate.CreateDelegate(typeof(ExecuteChatCommand), method, false);
+            if (command == null)
+            {
+                Logger.Log($"{method.DeclaringType.FullName}.{method.Name} can't be chat command", LogSeverity.ERROR);
+                continue;
+            }
+
+            result.Add(new ChatCommandInfo((ExecuteChatCommand)command, method.GetCustomAttribute<ChatCommandAttribute>()!));
+        }
 
         var hidden = result.Where(x => x.Hidden == true);
         Logger.Log($"Loaded {result.Count} commands: {string.Join(", ", result.Select(x => x.Name))}");

@@ -8,8 +8,7 @@ public static class Program
     private static bool _alreadyStopped = false;
     private static readonly UpdateType[] _allowedUpdates = new UpdateType[]
     {
-        UpdateType.Message,
-        UpdateType.InlineQuery
+        UpdateType.Message
     };
 
     public static void Main()

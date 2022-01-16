@@ -10,7 +10,7 @@ internal class TelegramBotConfiguration
 
     [JsonProperty("webhook"), JsonRequired]
     public string Webhook { get; set; } = "https://example.com/<your_route>/";
-   
+
     [JsonProperty("listening-port"), JsonRequired]
     public int ListeningPort { get; set; } = 5000;
 

@@ -8,7 +8,7 @@ namespace Example.Core;
 
 internal class TelegramApiListener
 {
-    public event Action<Update>? UpdateReceived;
+    public event Action<Update> UpdateReceived;
 
     private readonly HttpListener _listener = new();
     private readonly TelegramBotConfiguration _configuration;
@@ -19,20 +19,12 @@ internal class TelegramApiListener
         _listener.Prefixes.Add($"http://localhost:{_configuration.ListeningPort}/");
     }
 
-    public async Task StartAsync()
+    public void Start()
     {
         Logger.Log($"Listening port {_configuration.ListeningPort}. Expected route {_configuration.Route}");
 
         _listener.Start();
-
-        while (true)
-        {
-            try
-            {
-                ProcessRequest(await _listener.GetContextAsync());
-            }
-            catch (HttpListenerException) { }
-        }
+        _listener.BeginGetContext(OnReceivedRequest, _listener);
     }
 
     public void Stop()
@@ -41,36 +33,37 @@ internal class TelegramApiListener
         Logger.Log("Listening stopped");
     }
 
-    private void ProcessRequest(HttpListenerContext context)
+    private async void OnReceivedRequest(IAsyncResult asyncResult)
     {
+        var context = _listener.EndGetContext(asyncResult);
+        _listener.BeginGetContext(OnReceivedRequest, _listener);
+
         var request = context.Request;
+        var response = context.Response;
 
         if (request.Url == null)
             return;
 
         if (request.HttpMethod != "POST")
         {
-            Logger.Log($"Method {request.HttpMethod} is not allowed", LogSeverity.WARNING);
-            context.Response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
-            CommitResponse(context);
+            Logger.Log($"{request.UserHostName} request with method {request.HttpMethod}, but required {HttpMethod.Post}", LogSeverity.ERROR);
+
+            SetResponse(response, HttpStatusCode.MethodNotAllowed);
             return;
         }
 
-        if (request.Url.AbsolutePath.TrimEnd('/') == _configuration.Route.TrimEnd('/'))
+        if (request.Url.AbsolutePath.TrimEnd('/') != _configuration.Route.TrimEnd('/'))
         {
-            HandleUpdateRequest(request);
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
-            CommitResponse(context);
+            Logger.Log($"{request.UserHostName} tried to access {request.Url.AbsolutePath}, but not found", LogSeverity.ERROR);
+            SetResponse(response, HttpStatusCode.NotFound);
             return;
         }
 
-        Logger.Log($"Route {request.Url.AbsolutePath} is invalid", LogSeverity.WARNING);
-        context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-
-        CommitResponse(context);
+        var result = await TryParseUpdate(request);
+        SetResponse(response, result);
     }
 
-    private async void HandleUpdateRequest(HttpListenerRequest request)
+    private async Task<HttpStatusCode> TryParseUpdate(HttpListenerRequest request)
     {
         using var reader = new StreamReader(request.InputStream, request.ContentEncoding);
         var json = await reader.ReadToEndAsync();
@@ -80,20 +73,23 @@ internal class TelegramApiListener
         if (update != null)
         {
             UpdateReceived?.Invoke(update);
-            return;
+            return HttpStatusCode.OK;
         }
 
-        Logger.Log($"Received invalid update by {request.RemoteEndPoint.Address}", LogSeverity.WARNING);
+        Logger.Log($"Received invalid update by {request.RemoteEndPoint.Address}", LogSeverity.ERROR);
+        return HttpStatusCode.BadRequest;
     }
 
-    private static void CommitResponse(HttpListenerContext context, string response = "")
+    private static void SetResponse(HttpListenerResponse response, HttpStatusCode statusCode, string message = "")
     {
-        if (response == "")
-            response = $"{context.Response.StatusCode} - {context.Response.StatusDescription}";
+        response.StatusCode = (int)statusCode;
 
-        var buffer = new ReadOnlySpan<byte>(Encoding.Default.GetBytes(response));
-        context.Response.ContentLength64 = buffer.Length;
-        context.Response.OutputStream.Write(buffer);
-        context.Response.Close();
+        if (message == "")
+            message = $"{response.StatusCode} - {response.StatusDescription}";
+
+        var buffer = new ReadOnlySpan<byte>(Encoding.Default.GetBytes(message));
+        response.ContentLength64 = buffer.Length;
+        response.OutputStream.Write(buffer);
+        response.Close();
     }
 }

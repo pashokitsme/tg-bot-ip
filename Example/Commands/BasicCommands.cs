@@ -6,7 +6,7 @@ internal static class BasicCommands
 {
     [ChatCommand("test", "тестовая команда")]
     public static async Task<bool> Test(ChatCommandContext context)
-    { 
+    {
         await context.Client.SendTextMessageAsync(context.Message.Chat.Id, $"Тестовая команда, которая, кстати, работает!");
         return true;
     }

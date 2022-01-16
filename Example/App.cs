@@ -13,14 +13,12 @@ public class App
     private readonly TelegramApiListener _listener;
     private readonly TelegramBotClient _client;
     private readonly ChatCommandManager _commandManager;
-    private readonly UpdateHandler _updateHandler;
 
     public App()
     {
         _listener = new TelegramApiListener(_configuration);
         _client = new TelegramBotClient(_configuration.Token);
         _commandManager = new ChatCommandManager(_client);
-        _updateHandler = new UpdateHandler(_client, _commandManager);
 
         _listener.UpdateReceived += OnUpdateReceived;
     }
@@ -29,7 +27,7 @@ public class App
     {
         await SetupWebhookAsync(allowedUpdates);
         await SetupBotCommandsAsync();
-        await _listener.StartAsync();
+        _listener.Start();
     }
 
     public void Stop()
@@ -38,32 +36,39 @@ public class App
         _listener.Stop();
     }
 
-    private void OnUpdateReceived(Update update)
+    private async void OnUpdateReceived(Update update)
     {
-        switch (update.Type)
+        var message = update.Message;
+
+        if (message == null)
         {
-            case UpdateType.Message:
-                _updateHandler.OnMessageReceivedAsync(update.Message!);
-                return;
-
-            case UpdateType.InlineQuery:
-                _updateHandler.OnInlineQueryReceived(update.InlineQuery!);
-                return;
-
-            default:
-                throw new NotImplementedException();
+            Logger.Log("Message is null", LogSeverity.ERROR);
+            return;
         }
+
+        if (message.Type != MessageType.Text || message.Text == null)
+        {
+            Logger.Log($"Message should be {UpdateType.Message}/{MessageType.Text}, not {message.Type}", LogSeverity.ERROR);
+            return;
+        }
+
+        if (message.Text[0] == '/')
+        {
+            var result = _commandManager.TryExecuteCommand(message.Text.Split(' ')[0], message);
+
+            if (result == false)
+                await _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
+            return;
+        }
+
+        Logger.Log($"Reply to message {message.Text} by {message.From.Username}");
+        await _client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
     }
 
     private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)
     {
-        await _client.SetWebhookAsync(
-            _configuration.Webhook,
-            allowedUpdates: allowedUpdates,
-            dropPendingUpdates: true);
-
+        await _client.SetWebhookAsync(_configuration.Webhook, allowedUpdates: allowedUpdates, dropPendingUpdates: true);
         var webhook = await _client.GetWebhookInfoAsync();
-
         Logger.Log($"Webhook binded to {webhook.Url}");
     }
 
