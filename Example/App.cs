@@ -20,7 +20,7 @@ public class App
         _client = new TelegramBotClient(_configuration.Token);
         _commandManager = new ChatCommandManager(_client);
 
-        _listener.UpdateReceived += OnUpdateReceived;
+        _listener.UpdateReceived += (update) => Task.Run(() => OnUpdateReceived(update));
     }
 
     public async void StartAsync(UpdateType[] allowedUpdates)
@@ -58,6 +58,7 @@ public class App
 
             if (result == false)
                 await _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
+
             return;
         }
 

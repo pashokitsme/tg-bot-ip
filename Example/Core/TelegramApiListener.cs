@@ -86,7 +86,7 @@ internal class TelegramApiListener
         }
     }
 
-    private static IPAddress GetIPv4(HttpListenerRequest request) => request.RemoteEndPoint.Address.MapToIPv4();
+    private static string GetIPv4(HttpListenerRequest request) => request.Headers["X-Forwarded-For"];
 
     private static void SetResponse(HttpListenerResponse response, HttpStatusCode statusCode, string message = "")
     {
