@@ -1,6 +1,8 @@
 ﻿using Example.Commands;
+using Example.Commands.CallbackButtons;
 using Example.Core;
 using Example.Logging;
+using Example.Pages;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -9,25 +11,42 @@ namespace Example;
 
 public class App
 {
-    private readonly TelegramBotConfiguration _configuration = TelegramBotConfiguration.Get("config.json");
+    public static string ConfigurationFile { get; } = "config.json";
+
+    private readonly TelegramBotConfiguration _configuration = TelegramBotConfiguration.Get(ConfigurationFile);
     private readonly TelegramApiListener _listener;
     private readonly TelegramBotClient _client;
     private readonly ChatCommandManager _commandManager;
+    private readonly CallbackCommandManager _callbackManager;
+    private readonly UpdateHandler _updateHandler;
+    private readonly PageManager _pageManager;
 
     public App()
     {
         _listener = new TelegramApiListener(_configuration);
         _client = new TelegramBotClient(_configuration.Token);
         _commandManager = new ChatCommandManager(_client);
+        _callbackManager = new CallbackCommandManager(_client);
+        _updateHandler = new UpdateHandler(_client, _commandManager, _callbackManager);
+        _pageManager = new PageManager(_client);
+
 
         _listener.UpdateReceived += (update) => Task.Run(() => OnUpdateReceived(update));
     }
 
     public async void StartAsync(UpdateType[] allowedUpdates)
     {
+        ConfigureCommands();
         await SetupWebhookAsync(allowedUpdates);
         await SetupBotCommandsAsync();
         _listener.Start();
+    }
+
+    [ChatCommand("start", "start command", true)]
+    private async Task<bool> OnStartCommand(ChatCommandContext context)
+    {
+        await context.Client.SendTextMessageAsync(context.Message.Chat.Id, "Привет!");
+        return true;
     }
 
     public void Stop()
@@ -36,34 +55,28 @@ public class App
         _listener.Stop();
     }
 
-    private async void OnUpdateReceived(Update update)
+    private void OnUpdateReceived(Update update)
     {
-        var message = update.Message;
-
-        if (message == null)
+        switch(update.Type)
         {
-            Logger.Log("Message is null", LogSeverity.ERROR);
-            return;
+            case UpdateType.Message:
+                _updateHandler.OnMessageReceived(update.Message);
+                return;
+
+            case UpdateType.CallbackQuery:
+                _updateHandler.OnCallbackReceived(update.CallbackQuery);
+                return;
         }
+    }
 
-        if (message.Type != MessageType.Text || message.Text == null)
-        {
-            Logger.Log($"Message should be {UpdateType.Message}/{MessageType.Text}, not {message.Type}", LogSeverity.ERROR);
-            return;
-        }
-
-        if (message.Text[0] == '/')
-        {
-            var result = _commandManager.TryExecuteCommand(message.Text.Split(' ')[0], message);
-
-            if (result == false)
-                await _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
-
-            return;
-        }
-
-        Logger.Log($"Reply to message {message.Text} by {message.From.Username}");
-        await _client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
+    private void ConfigureCommands()
+    {
+        var basic = new BasicCommands();
+        _commandManager.Register(this);
+        _commandManager.Register(basic);
+        _commandManager.Register(_pageManager);
+        _callbackManager.Register(basic);
+        _callbackManager.Register(_pageManager);
     }
 
     private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)

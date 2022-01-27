@@ -51,15 +51,22 @@ internal class TelegramApiListener
             return;
         }
 
-        if (request.Url.AbsolutePath.TrimEnd('/') != _configuration.Route.TrimEnd('/'))
+        if (request.Url.AbsolutePath.TrimEnd('/') == _configuration.Route.TrimEnd('/'))
         {
-            Logger.Log($"{GetIPv4(request)} tried to access {request.Url.AbsolutePath} but not found", LogSeverity.ERROR);
-            SetResponse(response, HttpStatusCode.NotFound);
+            var result = await TryParseUpdate(request);
+            SetResponse(response, result);
             return;
         }
 
-        var result = await TryParseUpdate(request);
-        SetResponse(response, result);
+        if(request.Url.AbsolutePath.TrimEnd('/' ) == "/api")
+        {
+            Logger.Log("Received");
+            SetResponse(response, HttpStatusCode.OK);
+            return;
+        }
+
+        Logger.Log($"{GetIPv4(request)} tried to access {request.Url.AbsolutePath} but not found", LogSeverity.ERROR);
+        SetResponse(response, HttpStatusCode.NotFound);
     }
 
     private async Task<HttpStatusCode> TryParseUpdate(HttpListenerRequest request)

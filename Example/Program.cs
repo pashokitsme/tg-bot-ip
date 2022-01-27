@@ -1,4 +1,5 @@
-﻿using Example.Logging;
+﻿using Example.Commands.CallbackButtons;
+using Example.Logging;
 using Telegram.Bot.Types.Enums;
 
 namespace Example;
@@ -8,7 +9,8 @@ public static class Program
     private static bool _alreadyStopped = false;
     private static readonly UpdateType[] _allowedUpdates = new UpdateType[]
     {
-        UpdateType.Message
+        UpdateType.Message,
+        UpdateType.CallbackQuery
     };
 
     public static void Main()
@@ -22,6 +24,7 @@ public static class Program
 
         app.StartAsync(_allowedUpdates);
         Thread.Sleep(-1);
+        
     }
 
     private static void OnException(object sender, UnhandledExceptionEventArgs args)
