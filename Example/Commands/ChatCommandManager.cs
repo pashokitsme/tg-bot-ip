@@ -1,11 +1,13 @@
-﻿using Example.Logging;
+﻿using Example.Core;
+using Example.Logging;
+using System.Linq.Expressions;
 using System.Reflection;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace Example.Commands;
 
-internal delegate Task<bool> ExecuteChatCommand(ChatCommandContext context);
+public delegate Task<bool> ExecuteChatCommand(ChatCommandContext context);
 
 [AttributeUsage(AttributeTargets.Method)]
 public class ChatCommandAttribute : Attribute
@@ -62,32 +64,13 @@ internal class ChatCommandInfo
     }
 }
 
-public class ChatCommandManager
+internal class ChatCommandManager : CommandManager<ChatCommandInfo>
 {
-    private readonly HashSet<ChatCommandInfo> _commands;
-    private readonly TelegramBotClient _client;
+    public BotCommand[] Commands { get; private set; }
 
-    public ChatCommandManager(TelegramBotClient client)
+    public ChatCommandManager(TelegramBotClient client) : base(client)
     {
-        _client = client;
-        _commands = ResolveCommandMethods();
-    }
-
-    public bool TryExecuteCommand(string commandString, Message message)
-    {
-        commandString = commandString.TrimStart('/');
-        var command = _commands.FirstOrDefault(cmd => string.Compare(cmd.Name, commandString, StringComparison.OrdinalIgnoreCase) == 0);
-
-        if (command == default)
-            return false;
-
-        Logger.Log($"{message.From!.Username} executing command {command.Name}");
-        var result = command.Execute(_client, message);
-
-        if (result == false)
-            Logger.Log($"{message.From.Username} tried to execute {command.Name} but it's failed", LogSeverity.WARNING);
-
-        return result;
+        Commands = GetBotCommands();
     }
 
     public BotCommand[] GetBotCommands()
@@ -95,6 +78,7 @@ public class ChatCommandManager
         var commands = _commands.Where(x => x.Hidden == false);
         var result = new BotCommand[commands.Count()];
         var index = 0;
+
         foreach (var command in commands)
         {
             result[index++] = new BotCommand()
@@ -107,33 +91,47 @@ public class ChatCommandManager
         return result;
     }
 
-    private static HashSet<ChatCommandInfo> ResolveCommandMethods()
+    public ChatCommandInfo Get(string commandString)
     {
-        var methodInfos =
-            Assembly
-            .GetExecutingAssembly()
-            .GetTypes()
-            .SelectMany(type => type.GetMethods())
-            .Where(method => method.GetCustomAttribute<ChatCommandAttribute>() != null);
+        commandString = commandString.TrimStart('/');
+        return _commands.FirstOrDefault(cmd => string.Compare(cmd.Name, commandString, StringComparison.OrdinalIgnoreCase) == 0);
+    }
 
-        var result = new HashSet<ChatCommandInfo>();
+    public bool TryExecute(string commandString, Message message)
+    {
+        var command = Get(commandString);
 
-        foreach (var method in methodInfos)
+        if (command == default)
+            return false;
+
+        Logger.Log($"{message.From.Username} executing command {command.Name}");
+        var result = command.Execute(_client, message);
+
+        if (result == false)
+            Logger.Log($"{message.From.Username} tried to execute {command.Name} but it's failed", LogSeverity.WARNING);
+
+        return result;
+    }
+
+    public override void Register(object target)
+    {
+        var methods = FindMethodsWithAttribute<ChatCommandAttribute>(target);
+
+        foreach (var method in methods)
         {
-            var command = Delegate.CreateDelegate(typeof(ExecuteChatCommand), method, false);
-            if (command == null)
+            try
+            {
+                var command = method.CreateDelegate<ExecuteChatCommand>(target);
+                var attr = method.GetCustomAttribute<ChatCommandAttribute>();
+                _commands.Add(new ChatCommandInfo(command, attr));
+                Logger.Log($"Registered chatcommand {attr.Name} as {method.DeclaringType.FullName}.{method.Name}" + (attr.Hidden ? " (hidden)" : ""));
+            }
+            catch
             {
                 Logger.Log($"{method.DeclaringType.FullName}.{method.Name} can't be chat command", LogSeverity.ERROR);
                 continue;
             }
-
-            result.Add(new ChatCommandInfo((ExecuteChatCommand)command, method.GetCustomAttribute<ChatCommandAttribute>()!));
         }
-
-        var hidden = result.Where(x => x.Hidden == true);
-        Logger.Log($"Loaded {result.Count} commands: {string.Join(", ", result.Select(x => x.Name))}");
-        Logger.Log($"{hidden.Count()} hidden commands: {string.Join(", ", hidden.Select(x => x.Name))}");
-        return result;
     }
 }
 
