@@ -108,7 +108,7 @@ internal class ChatCommandManager : CommandManager<ChatCommandInfo>
         var result = command.Execute(_client, message);
 
         if (result == false)
-            Logger.Log($"{message.From.Username} tried to execute {command.Name} but it's failed", LogSeverity.WARNING);
+            Logger.Log($"{message.From.Username} tried to execute {command.Name} but it's failed", LogSeverity.Warning);
 
         return result;
     }
@@ -128,7 +128,7 @@ internal class ChatCommandManager : CommandManager<ChatCommandInfo>
             }
             catch
             {
-                Logger.Log($"{method.DeclaringType.FullName}.{method.Name} can't be chat command", LogSeverity.ERROR);
+                Logger.Log($"{method.DeclaringType.FullName}.{method.Name} can't be chat command", LogSeverity.Error);
                 continue;
             }
         }

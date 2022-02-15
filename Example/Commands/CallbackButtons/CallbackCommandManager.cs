@@ -20,10 +20,11 @@ internal class CallbackCommandAttribute : Attribute
 
 internal class CallbackCommandContext
 {
-    public TelegramBotClient Client { get; private set; }
-    public CallbackQuery Callback { get; private set; }
+    public TelegramBotClient Client { get; }
+    public CallbackQuery Callback { get; }
 
-    public string[] Args { get; private set; }
+    public string[] Args { get; }
+    
     public CallbackCommandContext(TelegramBotClient client, CallbackQuery query)
     {
         Client = client;
@@ -34,7 +35,7 @@ internal class CallbackCommandContext
 
 internal class CallbackCommandInfo
 {
-    public ButtonId Id { get; private set; }
+    public ButtonId Id { get; }
 
     private readonly ExecuteCallbackCommand _command;
 
@@ -57,7 +58,7 @@ internal class CallbackCommandManager : CommandManager<CallbackCommandInfo>
     public bool TryExecute(CallbackQuery callback)
     {
 
-        var command = _commands.FirstOrDefault(info => callback.Data.Split(';')[0].ToInt() == info.Id.ToButtonIdInt());
+        var command = _commands.FirstOrDefault(info => callback.Data != null && callback.Data.Split(';')[0].ToInt() == info.Id.ToButtonIdInt());
 
         if (command == default)
             return false;
@@ -66,7 +67,7 @@ internal class CallbackCommandManager : CommandManager<CallbackCommandInfo>
         var result = command.Execute(_client, callback);
 
         if (result == false)
-            Logger.Log($"{callback.From.Username} tried to execute {command.Id} but it's failed", LogSeverity.WARNING);
+            Logger.Log($"{callback.From.Username} tried to execute {command.Id} but it's failed", LogSeverity.Warning);
 
         
         return result;
@@ -87,8 +88,7 @@ internal class CallbackCommandManager : CommandManager<CallbackCommandInfo>
             }
             catch
             {
-                Logger.Log($"{method.DeclaringType.FullName}.{method.Name} can't be callback button", LogSeverity.ERROR);
-                continue;
+                Logger.Log($"{method.DeclaringType.FullName}.{method.Name} can't be callback button", LogSeverity.Error);
             }
         }
     }

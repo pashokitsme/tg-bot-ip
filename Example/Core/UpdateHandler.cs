@@ -24,35 +24,33 @@ namespace Example
         {
             if (message == null)
             {
-                Logger.Log("Message is null", LogSeverity.ERROR);
+                Logger.Log("Message is null", LogSeverity.Error);
                 return;
             }
 
             if (message.Type != MessageType.Text || message.Text == null)
             {
-                Logger.Log($"Message should be {UpdateType.Message}/{MessageType.Text}, not {message.Type}", LogSeverity.ERROR);
+                Logger.Log($"Message should be {UpdateType.Message}/{MessageType.Text}, not {message.Type}", LogSeverity.Error);
                 return;
             }
 
-            if (message.Text[0] == '/')
-            {
-                var result = _chatCommandManager.TryExecute(message.Text.Split(' ')[0], message);
-
-                if (result == false)
-                    await _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
-
+            if (message.Text[0] != '/') 
                 return;
-            }
+            
+            var result = _chatCommandManager.TryExecute(message.Text.Split(' ')[0], message);
 
-            Logger.Log($"Reply to message {message.Text} by {message.From.Username}");
-            await _client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
+            if (result == false)
+                await _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
+
+            // Logger.Log($"Reply to message {message.Text} by {message.From.Username}");
+            // await _client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
         }
 
         public void OnCallbackReceived(CallbackQuery query)
         {
             if(query == null)
             {
-                Logger.Log("Query is null", LogSeverity.ERROR);
+                Logger.Log("Query is null", LogSeverity.Error);
                 return;
             }
 
