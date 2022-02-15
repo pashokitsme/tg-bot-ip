@@ -17,7 +17,7 @@ internal class TelegramBotConfiguration : Configuration<TelegramBotConfiguration
     [JsonProperty("route"), JsonRequired]
     public string Route { get; set; } = "/<your_route>/";
 
-    [JsonProperty("sqlite-connection-string"), JsonRequired]
-    public string SqliteConnection { get; set; } = "";
+    [JsonProperty("openweather-token"), JsonRequired]
+    public string OpenWeatherToken = "";
 }
 

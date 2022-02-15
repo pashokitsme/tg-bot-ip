@@ -2,7 +2,7 @@
 using Example.Commands.CallbackButtons;
 using Example.Core;
 using Example.Logging;
-using Example.Pages;
+using Example.Weather;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -11,27 +11,33 @@ namespace Example;
 
 public class App
 {
-    public static string ConfigurationFile { get; } = "config.json";
+    private const string CONFIGURATION_FILE = "config.json";
 
-    private readonly TelegramBotConfiguration _configuration = TelegramBotConfiguration.Get(ConfigurationFile);
+    private readonly TelegramBotConfiguration _configuration = TelegramBotConfiguration.Get(CONFIGURATION_FILE);
     private readonly TelegramApiListener _listener;
     private readonly TelegramBotClient _client;
-    private readonly ChatCommandManager _commandManager;
-    private readonly CallbackCommandManager _callbackManager;
+    private readonly ChatCommandManager _commands;
+    private readonly CallbackCommandManager _callbacks;
     private readonly UpdateHandler _updateHandler;
-    private readonly PageManager _pageManager;
+    private readonly WeatherForecaster _weatherForecaster;
 
     public App()
     {
         _listener = new TelegramApiListener(_configuration);
         _client = new TelegramBotClient(_configuration.Token);
-        _commandManager = new ChatCommandManager(_client);
-        _callbackManager = new CallbackCommandManager(_client);
-        _updateHandler = new UpdateHandler(_client, _commandManager, _callbackManager);
-        _pageManager = new PageManager(_client);
+        _commands = new ChatCommandManager(_client);
+        _callbacks = new CallbackCommandManager(_client);
+        _updateHandler = new UpdateHandler(_client, _commands, _callbacks);
+        _weatherForecaster = new WeatherForecaster(_configuration.OpenWeatherToken);
 
-
-        _listener.UpdateReceived += (update) => Task.Run(() => OnUpdateReceived(update));
+        _listener.UpdateReceived += update => Task.Run(() => OnUpdateReceived(update));
+    }
+    
+    [ChatCommand("start", "start command", true)]
+    private async Task<bool> OnStartCommand(ChatCommandContext context)
+    {
+        await context.Client.SendTextMessageAsync(context.Message.Chat.Id, "Привет!");
+        return true;
     }
 
     public async void StartAsync(UpdateType[] allowedUpdates)
@@ -40,13 +46,6 @@ public class App
         await SetupWebhookAsync(allowedUpdates);
         await SetupBotCommandsAsync();
         _listener.Start();
-    }
-
-    [ChatCommand("start", "start command", true)]
-    private async Task<bool> OnStartCommand(ChatCommandContext context)
-    {
-        await context.Client.SendTextMessageAsync(context.Message.Chat.Id, "Привет!");
-        return true;
     }
 
     public void Stop()
@@ -66,17 +65,19 @@ public class App
             case UpdateType.CallbackQuery:
                 _updateHandler.OnCallbackReceived(update.CallbackQuery);
                 return;
+            
+            default:
+                throw new ArgumentOutOfRangeException(nameof(update));
         }
     }
 
     private void ConfigureCommands()
     {
         var basic = new BasicCommands();
-        _commandManager.Register(this);
-        _commandManager.Register(basic);
-        _commandManager.Register(_pageManager);
-        _callbackManager.Register(basic);
-        _callbackManager.Register(_pageManager);
+        _commands.Register(this);
+        _commands.Register(basic);
+        _callbacks.Register(basic);
+        _commands.Register(_weatherForecaster);
     }
 
     private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)
@@ -88,7 +89,7 @@ public class App
 
     private async Task SetupBotCommandsAsync()
     {
-        var commands = _commandManager.GetBotCommands();
+        var commands = _commands.GetBotCommands();
         await _client.SetMyCommandsAsync(commands);
         Logger.Log($"Setted up {commands.Length} commands");
     }

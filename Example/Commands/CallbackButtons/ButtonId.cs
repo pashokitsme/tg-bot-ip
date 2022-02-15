@@ -3,11 +3,7 @@
 internal enum ButtonId
 {
     FirstTest,
-    SecondTest,
-    NextPage,
-    PreviousPage,
-    PageNumber,
-    PageTest
+    SecondTest
 }
 
 internal static class ButtonIdExtensions

@@ -45,7 +45,7 @@ internal class TelegramApiListener
 
         if (request.HttpMethod != "POST")
         {
-            Logger.Log($"Request by {GetIPv4(request)} with method {request.HttpMethod} but required {HttpMethod.Post}", LogSeverity.ERROR);
+            Logger.Log($"Request by {GetIPv4(request)} with method {request.HttpMethod} but required {HttpMethod.Post}", LogSeverity.Error);
 
             SetResponse(response, HttpStatusCode.MethodNotAllowed);
             return;
@@ -58,14 +58,7 @@ internal class TelegramApiListener
             return;
         }
 
-        if(request.Url.AbsolutePath.TrimEnd('/' ) == "/api")
-        {
-            Logger.Log("Received");
-            SetResponse(response, HttpStatusCode.OK);
-            return;
-        }
-
-        Logger.Log($"{GetIPv4(request)} tried to access {request.Url.AbsolutePath} but not found", LogSeverity.ERROR);
+        Logger.Log($"{GetIPv4(request)} tried to access {request.Url.AbsolutePath} but not found", LogSeverity.Error);
         SetResponse(response, HttpStatusCode.NotFound);
     }
 
@@ -88,7 +81,7 @@ internal class TelegramApiListener
         }
         catch (Exception)
         {
-            Logger.Log($"Received invalid update by {GetIPv4(request)}", LogSeverity.ERROR);
+            Logger.Log($"Received invalid update by {GetIPv4(request)}", LogSeverity.Error);
             return HttpStatusCode.BadRequest;
         }
     }

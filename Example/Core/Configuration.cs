@@ -9,7 +9,7 @@ namespace Example.Core
         {
             if (File.Exists(path) == false)
             {
-                Logger.Log($"Configuration file is not exists ({path})", LogSeverity.ERROR);
+                Logger.Log($"Configuration file is not exists ({path})", LogSeverity.Error);
                 return CreateNew(path);
             }
 
@@ -20,7 +20,7 @@ namespace Example.Core
 
                 if (result == null)
                 {
-                    Logger.Log($"Can't parse configuration file: {path}", LogSeverity.ERROR);
+                    Logger.Log($"Can't parse configuration file: {path}", LogSeverity.Error);
                     return CreateNew(path);
                 }
 
