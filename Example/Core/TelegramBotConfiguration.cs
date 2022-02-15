@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Example.Core;
 
-internal class TelegramBotConfiguration
+internal class TelegramBotConfiguration : Configuration<TelegramBotConfiguration>
 {
     [JsonProperty("bot-token"), JsonRequired]
     public string Token { get; set; } = "<your_token>";
@@ -17,32 +17,7 @@ internal class TelegramBotConfiguration
     [JsonProperty("route"), JsonRequired]
     public string Route { get; set; } = "/<your_route>/";
 
-    public static TelegramBotConfiguration Get(string path)
-    {
-        if (File.Exists(path) == false)
-        {
-            Logger.Log($"Configuration file is not exists ({path})", LogSeverity.ERROR);
-            return CreateNew(path);
-        }
-
-        var json = File.ReadAllText(path);
-        var result = JsonConvert.DeserializeObject<TelegramBotConfiguration>(json);
-
-        if (result == null)
-        {
-            Logger.Log($"Can't parse configuration file: {path}", LogSeverity.ERROR);
-            return CreateNew(path);
-        }
-
-        return result;
-    }
-
-    public static TelegramBotConfiguration CreateNew(string path)
-    {
-        Logger.Log("Creating new configuration file");
-        var config = new TelegramBotConfiguration();
-        File.WriteAllText(path, JsonConvert.SerializeObject(config, Formatting.Indented));
-        return config;
-    }
+    [JsonProperty("openweather-token"), JsonRequired]
+    public string OpenWeatherToken = "";
 }
 

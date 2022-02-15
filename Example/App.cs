@@ -1,6 +1,8 @@
 ﻿using Example.Commands;
+using Example.Commands.CallbackButtons;
 using Example.Core;
 using Example.Logging;
+using Example.Weather;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -9,22 +11,38 @@ namespace Example;
 
 public class App
 {
-    private readonly TelegramBotConfiguration _configuration = TelegramBotConfiguration.Get("config.json");
+    private const string CONFIGURATION_FILE = "config.json";
+
+    private readonly TelegramBotConfiguration _configuration = TelegramBotConfiguration.Get(CONFIGURATION_FILE);
     private readonly TelegramApiListener _listener;
     private readonly TelegramBotClient _client;
-    private readonly ChatCommandManager _commandManager;
+    private readonly ChatCommandManager _commands;
+    private readonly CallbackCommandManager _callbacks;
+    private readonly UpdateHandler _updateHandler;
+    private readonly WeatherForecaster _weatherForecaster;
 
     public App()
     {
         _listener = new TelegramApiListener(_configuration);
         _client = new TelegramBotClient(_configuration.Token);
-        _commandManager = new ChatCommandManager(_client);
+        _commands = new ChatCommandManager(_client);
+        _callbacks = new CallbackCommandManager(_client);
+        _updateHandler = new UpdateHandler(_client, _commands, _callbacks);
+        _weatherForecaster = new WeatherForecaster(_configuration.OpenWeatherToken);
 
-        _listener.UpdateReceived += (update) => Task.Run(() => OnUpdateReceived(update));
+        _listener.UpdateReceived += update => Task.Run(() => OnUpdateReceived(update));
+    }
+    
+    [ChatCommand("start", "start command", true)]
+    private async Task<bool> OnStartCommand(ChatCommandContext context)
+    {
+        await context.Client.SendTextMessageAsync(context.Message.Chat.Id, "Привет!");
+        return true;
     }
 
     public async void StartAsync(UpdateType[] allowedUpdates)
     {
+        ConfigureCommands();
         await SetupWebhookAsync(allowedUpdates);
         await SetupBotCommandsAsync();
         _listener.Start();
@@ -36,34 +54,30 @@ public class App
         _listener.Stop();
     }
 
-    private async void OnUpdateReceived(Update update)
+    private void OnUpdateReceived(Update update)
     {
-        var message = update.Message;
-
-        if (message == null)
+        switch(update.Type)
         {
-            Logger.Log("Message is null", LogSeverity.ERROR);
-            return;
+            case UpdateType.Message:
+                _updateHandler.OnMessageReceived(update.Message);
+                return;
+
+            case UpdateType.CallbackQuery:
+                _updateHandler.OnCallbackReceived(update.CallbackQuery);
+                return;
+            
+            default:
+                throw new ArgumentOutOfRangeException(nameof(update));
         }
+    }
 
-        if (message.Type != MessageType.Text || message.Text == null)
-        {
-            Logger.Log($"Message should be {UpdateType.Message}/{MessageType.Text}, not {message.Type}", LogSeverity.ERROR);
-            return;
-        }
-
-        if (message.Text[0] == '/')
-        {
-            var result = _commandManager.TryExecuteCommand(message.Text.Split(' ')[0], message);
-
-            if (result == false)
-                await _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
-
-            return;
-        }
-
-        Logger.Log($"Reply to message {message.Text} by {message.From.Username}");
-        await _client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
+    private void ConfigureCommands()
+    {
+        var basic = new BasicCommands();
+        _commands.Register(this);
+        _commands.Register(basic);
+        _callbacks.Register(basic);
+        _commands.Register(_weatherForecaster);
     }
 
     private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)
@@ -75,7 +89,7 @@ public class App
 
     private async Task SetupBotCommandsAsync()
     {
-        var commands = _commandManager.GetBotCommands();
+        var commands = _commands.GetBotCommands();
         await _client.SetMyCommandsAsync(commands);
         Logger.Log($"Setted up {commands.Length} commands");
     }
