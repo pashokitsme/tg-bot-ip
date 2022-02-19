@@ -1,4 +1,4 @@
-﻿using Example.Commands.CallbackButtons;
+﻿using Example.Commands.Buttons;
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
 
@@ -12,16 +12,23 @@ internal class BasicCommands
         await context.Client.SendTextMessageAsync(context.Message.Chat.Id, $"Тестовая команда, которая, кстати, работает!");
         return true;
     }
+    
+    [ChatCommand("statictest", "Тестовая статическая команда")]
+    private static async Task<bool> TestStatic(ChatCommandContext context)
+    {
+        await context.Client.SendTextMessageAsync(context.Message.Chat.Id, $"Тестовая команда, которая, кстати, работает!");
+        return true;
+    }
 
     [ChatCommand("callback", "Тест кнопок")]
     private async Task<bool> CallbackTest(ChatCommandContext context)
     {
         var buttons = new List<List<InlineKeyboardButton>>()
         {
-            new List<InlineKeyboardButton>()
+            new()
             {
-                InlineKeyboardButton.WithCallbackData("Тестовая кнопка", ButtonId.FirstTest.ToButtonIdString()),
-                InlineKeyboardButton.WithCallbackData("Вторая тестовая кнопка", ButtonId.SecondTest.ToButtonIdString())
+                InlineKeyboardButton.WithCallbackData("Тестовая кнопка", CallbackButtons.Id.FirstTest.ToButtonIdString()),
+                InlineKeyboardButton.WithCallbackData("Вторая тестовая кнопка", CallbackButtons.Id.SecondTest.ToButtonIdString())
             }
         };
 
@@ -30,7 +37,7 @@ internal class BasicCommands
         return true;
     }
 
-    [CallbackCommand(ButtonId.FirstTest)]
+    [CallbackCommand(CallbackButtons.Id.FirstTest)]
     private async Task<bool> FirstCallbackTest(CallbackCommandContext context)
     {
         _ = context.Client.AnswerCallbackQueryAsync(context.Callback.Id);
@@ -38,7 +45,7 @@ internal class BasicCommands
         return true;
     }
 
-    [CallbackCommand(ButtonId.SecondTest)]
+    [CallbackCommand(CallbackButtons.Id.SecondTest)]
     private async Task<bool> SecondCallbackTest(CallbackCommandContext context)
     {
         _ = context.Client.AnswerCallbackQueryAsync(context.Callback.Id);

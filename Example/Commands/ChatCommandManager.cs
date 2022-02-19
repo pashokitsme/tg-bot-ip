@@ -1,6 +1,4 @@
-﻿using Example.Core;
-using Example.Logging;
-using System.Linq.Expressions;
+﻿using Example.Logging;
 using System.Reflection;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -12,9 +10,9 @@ public delegate Task<bool> ExecuteChatCommand(ChatCommandContext context);
 [AttributeUsage(AttributeTargets.Method)]
 public class ChatCommandAttribute : Attribute
 {
-    public string Name { get; private set; }
-    public string Description { get; private set; }
-    public bool Hidden { get; private set; }
+    public string Name { get; }
+    public string Description { get; }
+    public bool Hidden { get; }
 
     public ChatCommandAttribute(string name, string desc, bool hidden = false)
     {
@@ -29,9 +27,9 @@ public class ChatCommandAttribute : Attribute
 
 public class ChatCommandContext
 {
-    public TelegramBotClient Client { get; private set; }
-    public Message Message { get; private set; }
-    public string[] Args { get; private set; }
+    public TelegramBotClient Client { get; }
+    public Message Message { get; }
+    public string[] Args { get; }
 
     public ChatCommandContext(TelegramBotClient client, Message message)
     {
@@ -66,17 +64,15 @@ internal class ChatCommandInfo
 
 internal class ChatCommandManager : CommandManager<ChatCommandInfo>
 {
-    public BotCommand[] Commands { get; private set; }
-
     public ChatCommandManager(TelegramBotClient client) : base(client)
     {
-        Commands = GetBotCommands();
+        GetBotCommands();
     }
 
     public BotCommand[] GetBotCommands()
     {
-        var commands = _commands.Where(x => x.Hidden == false);
-        var result = new BotCommand[commands.Count()];
+        var commands = CommandDelegates.Where(x => x.Hidden == false).ToArray();
+        var result = new BotCommand[commands.Length];
         var index = 0;
 
         foreach (var command in commands)
@@ -91,10 +87,10 @@ internal class ChatCommandManager : CommandManager<ChatCommandInfo>
         return result;
     }
 
-    public ChatCommandInfo Get(string commandString)
+    private ChatCommandInfo Get(string commandString)
     {
         commandString = commandString.TrimStart('/');
-        return _commands.FirstOrDefault(cmd => string.Compare(cmd.Name, commandString, StringComparison.OrdinalIgnoreCase) == 0);
+        return CommandDelegates.FirstOrDefault(cmd => string.Compare(cmd.Name, commandString, StringComparison.OrdinalIgnoreCase) == 0);
     }
 
     public bool TryExecute(string commandString, Message message)
@@ -105,7 +101,7 @@ internal class ChatCommandManager : CommandManager<ChatCommandInfo>
             return false;
 
         Logger.Log($"{message.From.Username} executing command {command.Name}");
-        var result = command.Execute(_client, message);
+        var result = command.Execute(Client, message);
 
         if (result == false)
             Logger.Log($"{message.From.Username} tried to execute {command.Name} but it's failed", LogSeverity.Warning);
@@ -119,18 +115,19 @@ internal class ChatCommandManager : CommandManager<ChatCommandInfo>
 
         foreach (var method in methods)
         {
-            try
+            var commandDelegate = method.IsStatic
+                ? Delegate.CreateDelegate(typeof(ExecuteChatCommand), method, false)
+                : Delegate.CreateDelegate(typeof(ExecuteChatCommand), target, method, false);
+            
+            if (commandDelegate is not ExecuteChatCommand command)
             {
-                var command = method.CreateDelegate<ExecuteChatCommand>(target);
-                var attr = method.GetCustomAttribute<ChatCommandAttribute>();
-                _commands.Add(new ChatCommandInfo(command, attr));
-                Logger.Log($"Registered chatcommand {attr.Name} as {method.DeclaringType.FullName}.{method.Name}" + (attr.Hidden ? " (hidden)" : ""));
-            }
-            catch
-            {
-                Logger.Log($"{method.DeclaringType.FullName}.{method.Name} can't be chat command", LogSeverity.Error);
+                Logger.Log($"{method.DeclaringType?.FullName}.{method.Name} can't be chat command", LogSeverity.Error);
                 continue;
             }
+            
+            var attr = method.GetCustomAttribute<ChatCommandAttribute>();
+            CommandDelegates.Add(new ChatCommandInfo(command, attr));
+            Logger.Log($"Registered chatcommand {attr?.Name} as {method.DeclaringType?.FullName}.{method.Name}" + (attr.Hidden ? " (hidden)" : ""));
         }
     }
 }

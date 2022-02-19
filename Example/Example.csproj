@@ -27,7 +27,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-		<PackageReference Include="OpenWeatherMap" Version="1.1.0" />
 		<PackageReference Include="Telegram.Bot" Version="17.0.0" />
 	</ItemGroup>
 

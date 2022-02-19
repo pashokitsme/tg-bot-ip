@@ -1,5 +1,4 @@
-﻿using Example.Logging;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace Example.Core;
 

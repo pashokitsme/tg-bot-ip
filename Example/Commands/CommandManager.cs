@@ -3,21 +3,22 @@ using Telegram.Bot;
 
 namespace Example.Commands
 {
-    internal abstract class CommandManager<TCommandInfo>
+    public abstract class CommandManager<TCommandInfo>
     {
-        protected readonly HashSet<TCommandInfo> _commands = new();
-        protected readonly TelegramBotClient _client;
+        protected readonly HashSet<TCommandInfo> CommandDelegates = new();
+        protected readonly TelegramBotClient Client;
 
-        public CommandManager(TelegramBotClient client)
+        protected CommandManager(TelegramBotClient client)
         {
-            _client = client;
+            Client = client;
         }
+        
         public abstract void Register(object target);
 
         protected static List<MethodInfo> FindMethodsWithAttribute<TAttribute>(object target) where TAttribute : Attribute
         {
             return target.GetType()
-                .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Static)
                 .Where(method => method.GetCustomAttribute<TAttribute>() != null).ToList();
         }
     }

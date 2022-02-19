@@ -1,11 +1,11 @@
 ﻿using Example.Commands;
-using Example.Commands.CallbackButtons;
+using Example.Commands.Buttons;
 using Example.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Example
+namespace Example.Core
 {
     internal class UpdateHandler
     {
@@ -41,9 +41,6 @@ namespace Example
 
             if (result == false)
                 await _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
-
-            // Logger.Log($"Reply to message {message.Text} by {message.From.Username}");
-            // await _client.SendTextMessageAsync(message.Chat.Id, $"{message.Text}", replyToMessageId: message.MessageId);
         }
 
         public void OnCallbackReceived(CallbackQuery query)

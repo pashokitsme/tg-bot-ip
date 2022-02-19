@@ -1,5 +1,5 @@
 ﻿using Example.Commands;
-using Example.Commands.CallbackButtons;
+using Example.Commands.Buttons;
 using Example.Core;
 using Example.Logging;
 using Example.Weather;
@@ -19,8 +19,8 @@ public class App
     private readonly ChatCommandManager _commands;
     private readonly CallbackCommandManager _callbacks;
     private readonly UpdateHandler _updateHandler;
-    private readonly WeatherForecaster _weatherForecaster;
 
+    private readonly object[] _commandContainers;
     public App()
     {
         _listener = new TelegramApiListener(_configuration);
@@ -28,7 +28,13 @@ public class App
         _commands = new ChatCommandManager(_client);
         _callbacks = new CallbackCommandManager(_client);
         _updateHandler = new UpdateHandler(_client, _commands, _callbacks);
-        _weatherForecaster = new WeatherForecaster(_configuration.OpenWeatherToken);
+
+        _commandContainers = new object[]
+        {
+            new WeatherForecaster(_configuration.OpenWeatherToken),
+            new BasicCommands(),
+            this
+        };
 
         _listener.UpdateReceived += update => Task.Run(() => OnUpdateReceived(update));
     }
@@ -42,7 +48,7 @@ public class App
 
     public async void StartAsync(UpdateType[] allowedUpdates)
     {
-        ConfigureCommands();
+        ConfigureCommands(_commandContainers);
         await SetupWebhookAsync(allowedUpdates);
         await SetupBotCommandsAsync();
         _listener.Start();
@@ -71,13 +77,15 @@ public class App
         }
     }
 
-    private void ConfigureCommands()
+    private void ConfigureCommands(IEnumerable<object> targets)
     {
-        var basic = new BasicCommands();
-        _commands.Register(this);
-        _commands.Register(basic);
-        _callbacks.Register(basic);
-        _commands.Register(_weatherForecaster);
+        targets
+            .AsParallel()
+            .ForAll(target =>
+        {
+            _callbacks.Register(target);
+            _commands.Register(target);
+        });
     }
 
     private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)

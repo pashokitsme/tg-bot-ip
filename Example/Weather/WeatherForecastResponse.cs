@@ -2,24 +2,6 @@
 
 namespace Example.Weather;
 
-public class Coord
-{
-	[JsonProperty("lon")] public double Lon;
-
-	[JsonProperty("lat")] public double Lat;
-}
-
-public class Weather
-{
-	[JsonProperty("id")] public int Id;
-
-	[JsonProperty("main")] public string Main;
-
-	[JsonProperty("description")] public string Description;
-
-	[JsonProperty("icon")] public string Icon;
-}
-
 public class Main
 {
 	[JsonProperty("temp")] public double Temp;
@@ -48,46 +30,31 @@ public class Clouds
 	[JsonProperty("all")] public int All;
 }
 
-public class Sys
-{
-	[JsonProperty("type")] public int Type;
-
-	[JsonProperty("id")] public int Id;
-
-	[JsonProperty("message")] public double Message;
-
-	[JsonProperty("country")] public string Country;
-
-	[JsonProperty("sunrise")] public int Sunrise;
-
-	[JsonProperty("sunset")] public int Sunset;
-}
-
 public class WeatherForecastResponse
 {
-	[JsonProperty("coord")] public Coord Coord;
-
-	[JsonProperty("weather")] public List<Weather> Weather;
-
-	[JsonProperty("base")] public string Base;
-
 	[JsonProperty("main")] public Main Main;
 
-	[JsonProperty("visibility")] public int Visibility;
-
 	[JsonProperty("wind")] public Wind Wind;
-
-	[JsonProperty("clouds")] public Clouds Clouds;
-
-	[JsonProperty("dt")] public int Dt;
-
-	[JsonProperty("sys")] public Sys Sys;
-
-	[JsonProperty("timezone")] public int Timezone;
-
-	[JsonProperty("id")] public int Id;
-
+	
 	[JsonProperty("name")] public string Name;
 
-	[JsonProperty("cod")] public int Cod;
+	[JsonProperty("clouds")] public Clouds Clouds;
+}
+
+public class WeatherCityInfo
+{
+	[JsonProperty("name")]
+	public string Name;
+
+	[JsonProperty("lat")]
+	public double Lat;
+
+	[JsonProperty("lon")]
+	public double Lon;
+
+	[JsonProperty("country")]
+	public string Country;
+
+	[JsonProperty("state")]
+	public string State;
 }

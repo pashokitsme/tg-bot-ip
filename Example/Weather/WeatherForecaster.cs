@@ -27,27 +27,26 @@ public class WeatherForecaster
 		if (context.Args.Length < 1)
 			return false;
 
+		var city = string.Join(' ', context.Args);
+		
 		_ = context.Client.SendChatActionAsync(context.Message.Chat.Id, ChatAction.Typing);
 		var message = await context.Client.SendTextMessageAsync(context.Message.Chat.Id, "`Ожидайте`", ParseMode.Markdown);
 
-		// ReSharper disable once SimplifyLinqExpressionUseMinByAndMaxBy
-		var info = (await CityNameToCoordinates(context.Args[0]))
+		var info = (await CityNameToCoordinates(city))
 			.OrderByDescending(x => x.Country == "RU")
 			.FirstOrDefault();
 
-		
 		if (info == null)
 			return false;
 
-		var forecast = await FormatWeatherInfo(info.Lat, info.Lon, info.Name);
-		_ =  context.Client.EditMessageTextAsync(message.Chat.Id, message.MessageId, forecast, ParseMode.Markdown);
+		var response = FormatWeatherInfo(await GetWeatherInfo(info.Lat, info.Lon));
+		_ =  context.Client.EditMessageTextAsync(message.Chat.Id, message.MessageId, response, ParseMode.Markdown);
 		return true;
 	}
 
-	private async Task<string> FormatWeatherInfo(double lat, double lon, string name)
+	private static string FormatWeatherInfo(WeatherForecastResponse weather)
 	{
-		var weather = await GetWeatherInfo(lat, lon);
-		var builder = new StringBuilder($"`{name}`\n");
+		var builder = new StringBuilder($"`{weather.Name}`\n");
 		builder.AppendLine($"Температура: `{Math.Round(weather.Main.Temp)}℃`. Ощущается, как `{Math.Round(weather.Main.FeelsLike)}℃`");
 		builder.AppendLine($"Ветер: `{weather.Wind.Speed} м/с, {weather.Wind.Deg}°`");
 		builder.AppendLine($"Облачность `{weather.Clouds.All}%`. Влажность `{weather.Main.Humidity}%`. Давление: `{weather.Main.Pressure} мм.рт.ст.`");
