@@ -6,7 +6,7 @@ using Telegram.Bot.Types;
 
 namespace Example.Core;
 
-internal class TelegramApiListener
+public class TelegramApiListener
 {
     public event Action<Update> UpdateReceived;
 

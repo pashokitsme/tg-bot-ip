@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Example.Core
 {
-    internal abstract class Configuration<T> where T : class, new()
+    public abstract class Configuration<T> where T : class, new()
     {
         public static T Get(string path)
         {

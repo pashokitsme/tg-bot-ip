@@ -2,7 +2,7 @@
 
 namespace Example.Core;
 
-internal class TelegramBotConfiguration : Configuration<TelegramBotConfiguration>
+public class TelegramBotConfiguration : Configuration<TelegramBotConfiguration>
 {
     [JsonProperty("bot-token"), JsonRequired]
     public string Token { get; set; } = "<your_token>";

@@ -41,7 +41,7 @@ public class ChatCommandContext
     }
 }
 
-internal class ChatCommandInfo
+public class ChatCommandInfo
 {
     public string Name => _attribute.Name;
     public string Description => _attribute.Description;
@@ -62,7 +62,7 @@ internal class ChatCommandInfo
     }
 }
 
-internal class ChatCommandManager : CommandManager<ChatCommandInfo>
+public class ChatCommandManager : CommandManager<ChatCommandInfo>
 {
     public ChatCommandManager(TelegramBotClient client) : base(client)
     {
