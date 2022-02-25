@@ -17,12 +17,12 @@ public class TelegramApiListener
     public TelegramApiListener(ITelegramBotConfiguration configuration)
     {
         _configuration = configuration;
-        _listener.Prefixes.Add($"http://localhost:{_configuration.ListeningPort}/");
+        _listener.Prefixes.Add(_configuration.ListeningUrl);
     }
 
     public void Start()
     {
-        Logger.Log($"Listening port {_configuration.ListeningPort}. Expected route {_configuration.Route}");
+        Logger.Log($"Listening port {_configuration.ListeningUrl}. Expected route {_configuration.Route}");
         _listener.Start();
         _listener.BeginGetContext(OnReceivedRequest, _listener);
     }

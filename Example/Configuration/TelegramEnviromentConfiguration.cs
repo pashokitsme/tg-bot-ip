@@ -4,7 +4,7 @@ public class TelegramEnviromentConfiguration : ITelegramBotConfiguration
 {
 	public string Token { get; }
 	public string Webhook { get; }
-	public int ListeningPort { get; }
+	public string ListeningUrl { get; }
 	public string Route { get; }
 	public string OpenWeatherToken { get; }
 
@@ -12,8 +12,10 @@ public class TelegramEnviromentConfiguration : ITelegramBotConfiguration
 	{
 		Token = Environment.GetEnvironmentVariable("token");
 		Webhook = Environment.GetEnvironmentVariable("webhook");
-		ListeningPort = int.Parse(Environment.GetEnvironmentVariable("PORT") ?? "-1");
 		Route = Environment.GetEnvironmentVariable("route");
 		OpenWeatherToken = Environment.GetEnvironmentVariable("open-weather-token");
+		
+		var url = ListeningUrl = Environment.GetEnvironmentVariable("listening-url");
+		ListeningUrl = string.Format(url, Environment.GetEnvironmentVariable("PORT"));
 	}
 }
