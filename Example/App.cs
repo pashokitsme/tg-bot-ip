@@ -1,4 +1,5 @@
 ﻿using Example.Commands;
+using Example.Configuration;
 using Example.Core;
 using Example.Logging;
 using Example.Weather;
@@ -10,17 +11,16 @@ namespace Example;
 
 public class App
 {
-	private const string CONFIGURATION_FILE = "config.json";
-
-	private readonly TelegramBotConfiguration _configuration = TelegramBotConfiguration.Get(CONFIGURATION_FILE);
+	private readonly ITelegramBotConfiguration _configuration;
 	private readonly TelegramApiListener _listener;
 	private readonly TelegramBotClient _client;
 	private readonly ChatCommandManager _commands;
 
 	private readonly object[] _commandContainers;
 
-	public App()
+	public App(ITelegramBotConfiguration configuration)
 	{
+		_configuration = configuration;
 		_listener = new TelegramApiListener(_configuration);
 		_client = new TelegramBotClient(_configuration.Token);
 		_commands = new ChatCommandManager(_client);
@@ -35,7 +35,7 @@ public class App
 		_listener.UpdateReceived += update => Task.Run(() => OnUpdateReceived(update));
 	}
 
-	public async void StartAsync(UpdateType[] allowedUpdates)
+	public async void StartAsync(IEnumerable<UpdateType> allowedUpdates)
 	{
 		ConfigureCommands(_commandContainers);
 		await SetupWebhookAsync(allowedUpdates);
@@ -80,7 +80,7 @@ public class App
 			_commands.Register(target);
 	}
 
-	private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)
+	private async Task SetupWebhookAsync(IEnumerable<UpdateType> allowedUpdates)
 	{
 		await _client.SetWebhookAsync(_configuration.Webhook, allowedUpdates: allowedUpdates, dropPendingUpdates: true);
 		var webhook = await _client.GetWebhookInfoAsync();

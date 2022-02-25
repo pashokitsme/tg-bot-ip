@@ -1,8 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Example.Core;
+using Newtonsoft.Json;
 
-namespace Example.Core;
+namespace Example.Configuration;
 
-public class TelegramBotConfiguration : Configuration<TelegramBotConfiguration>
+public class TelegramBotConfiguration : Configuration<TelegramBotConfiguration>, ITelegramBotConfiguration
 {
     [JsonProperty("bot-token"), JsonRequired]
     public string Token { get; set; } = "<your_token>";
@@ -17,6 +18,8 @@ public class TelegramBotConfiguration : Configuration<TelegramBotConfiguration>
     public string Route { get; set; } = "/<your_route>/";
 
     [JsonProperty("openweather-token"), JsonRequired]
-    public string OpenWeatherToken = "";
-}
+    public string OpenWeatherToken { get; set;  }
+    
+};
+
 

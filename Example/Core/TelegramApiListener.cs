@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System.Net;
 using System.Text;
+using Example.Configuration;
 using Telegram.Bot.Types;
 
 namespace Example.Core;
@@ -11,9 +12,9 @@ public class TelegramApiListener
     public event Action<Update> UpdateReceived;
 
     private readonly HttpListener _listener = new();
-    private readonly TelegramBotConfiguration _configuration;
+    private readonly ITelegramBotConfiguration _configuration;
 
-    public TelegramApiListener(TelegramBotConfiguration configuration)
+    public TelegramApiListener(ITelegramBotConfiguration configuration)
     {
         _configuration = configuration;
         _listener.Prefixes.Add($"http://localhost:{_configuration.ListeningPort}/");

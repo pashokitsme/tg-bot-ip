@@ -1,4 +1,5 @@
-﻿using Example.Logging;
+﻿using Example.Configuration;
+using Example.Logging;
 using Telegram.Bot.Types.Enums;
 
 namespace Example;
@@ -15,14 +16,13 @@ public static class Program
     {
         Logger.Log("Starting! Press CTRL+C to exit");
 
-        var app = new App();
+        var app = new App(new TelegramEnviromentConfiguration());
         AppDomain.CurrentDomain.ProcessExit += (_, _) => OnStop(app);
         Console.CancelKeyPress += (_, _) => OnStop(app);
         AppDomain.CurrentDomain.UnhandledException += OnException;
 
         app.StartAsync(_allowedUpdates);
         Thread.Sleep(-1);
-        
     }
 
     private static void OnException(object sender, UnhandledExceptionEventArgs args)
