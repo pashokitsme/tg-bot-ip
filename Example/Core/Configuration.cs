@@ -12,19 +12,16 @@ namespace Example.Core
                 Logger.Log($"Configuration file is not exists ({path})", LogSeverity.Error);
                 return CreateNew(path);
             }
-
-            var json = File.ReadAllText(path);
+            
             try
             {
-                var result = JsonConvert.DeserializeObject<T>(json);
+                var result = JsonConvert.DeserializeObject<T>(File.ReadAllText(path));
 
-                if (result == null)
-                {
-                    Logger.Log($"Can't parse configuration file: {path}", LogSeverity.Error);
-                    return CreateNew(path);
-                }
-
-                return result;
+                if (result != null) 
+                    return result;
+                
+                Logger.Log($"Can't parse configuration file: {path}", LogSeverity.Error);
+                return CreateNew(path);
             }
             catch
             { 
@@ -32,7 +29,7 @@ namespace Example.Core
             }
         }
 
-        public static T CreateNew(string path)
+        private static T CreateNew(string path)
         {
             Logger.Log("Creating new configuration file");
             var config = new T();

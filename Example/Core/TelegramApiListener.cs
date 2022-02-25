@@ -32,7 +32,7 @@ public class TelegramApiListener
         Logger.Log("Listening stopped");
     }
 
-    private async void OnReceivedRequest(IAsyncResult asyncResult)
+    private void OnReceivedRequest(IAsyncResult asyncResult)
     {
         var context = _listener.EndGetContext(asyncResult);
         _listener.BeginGetContext(OnReceivedRequest, _listener);
@@ -46,40 +46,36 @@ public class TelegramApiListener
         if (request.HttpMethod != "POST")
         {
             Logger.Log($"Request by {GetIPv4(request)} with method {request.HttpMethod} but required {HttpMethod.Post}", LogSeverity.Error);
-
             SetResponse(response, HttpStatusCode.MethodNotAllowed);
             return;
         }
 
-        if (request.Url.AbsolutePath.TrimEnd('/') == _configuration.Route.TrimEnd('/'))
+        if (request.Url.AbsolutePath.TrimEnd('/') != _configuration.Route.TrimEnd('/'))
         {
-            var result = await TryParseUpdate(request);
-            SetResponse(response, result);
+            Logger.Log($"{GetIPv4(request)} tried to access {request.Url.AbsolutePath} but not found", LogSeverity.Error);
+            SetResponse(response, HttpStatusCode.NotFound);
             return;
         }
-
-        Logger.Log($"{GetIPv4(request)} tried to access {request.Url.AbsolutePath} but not found", LogSeverity.Error);
-        SetResponse(response, HttpStatusCode.NotFound);
+        
+        SetResponse(response, TryParseUpdate(request));
     }
 
-    private async Task<HttpStatusCode> TryParseUpdate(HttpListenerRequest request)
+    private HttpStatusCode TryParseUpdate(HttpListenerRequest request)
     {
         using var reader = new StreamReader(request.InputStream, request.ContentEncoding);
         try
         {
-            var json = await reader.ReadToEndAsync();
+            var json = reader.ReadToEnd();
             var update = JsonConvert.DeserializeObject<Update>(json);
 
-            if (update != null)
-            {
-                UpdateReceived?.Invoke(update);
-                Logger.Log($"Received update by {GetIPv4(request)}");
-                return HttpStatusCode.OK;
-            }
-
-            throw new NullReferenceException(nameof(update));
+            if (update == null) 
+                throw new NullReferenceException(nameof(update));
+            
+            UpdateReceived?.Invoke(update);
+            Logger.Log($"Received update by {GetIPv4(request)}");
+            return HttpStatusCode.OK;
         }
-        catch (Exception)
+        catch
         {
             Logger.Log($"Received invalid update by {GetIPv4(request)}", LogSeverity.Error);
             return HttpStatusCode.BadRequest;
@@ -88,13 +84,10 @@ public class TelegramApiListener
 
     private static string GetIPv4(HttpListenerRequest request) => request.Headers["X-Forwarded-For"];
 
-    private static void SetResponse(HttpListenerResponse response, HttpStatusCode statusCode, string message = "")
+    private static void SetResponse(HttpListenerResponse response, HttpStatusCode statusCode, string message = null)
     {
         response.StatusCode = (int)statusCode;
-
-        if (message == "")
-            message = $"{response.StatusCode} - {response.StatusDescription}";
-
+        message = message == null ? $"{response.StatusCode} - {response.StatusDescription}" : "";
         var buffer = new ReadOnlySpan<byte>(Encoding.Default.GetBytes(message));
         response.ContentLength64 = buffer.Length;
         response.OutputStream.Write(buffer);

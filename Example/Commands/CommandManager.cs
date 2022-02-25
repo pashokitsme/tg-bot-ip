@@ -14,7 +14,7 @@ namespace Example.Commands
         }
         
         public abstract void Register(object target);
-
+        
         protected static List<MethodInfo> FindMethodsWithAttribute<TAttribute>(object target) where TAttribute : Attribute
         {
             return target.GetType()

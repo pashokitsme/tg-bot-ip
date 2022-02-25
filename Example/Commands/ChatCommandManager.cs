@@ -35,9 +35,7 @@ public class ChatCommandContext
     {
         Client = client;
         Message = message;
-        var splitted = message.Text.Split(' ');
-        Args = new string[splitted.Length - 1];
-        Array.Copy(splitted, 1, Args, 0, splitted.Length - 1);
+        Args = message.Text.Split(' ').Skip(1).ToArray();
     }
 }
 
@@ -64,10 +62,7 @@ public class ChatCommandInfo
 
 public class ChatCommandManager : CommandManager<ChatCommandInfo>
 {
-    public ChatCommandManager(TelegramBotClient client) : base(client)
-    {
-        GetBotCommands();
-    }
+    public ChatCommandManager(TelegramBotClient client) : base(client) { }
 
     public BotCommand[] GetBotCommands()
     {
@@ -87,17 +82,10 @@ public class ChatCommandManager : CommandManager<ChatCommandInfo>
         return result;
     }
 
-    private ChatCommandInfo Get(string commandString)
-    {
-        commandString = commandString.TrimStart('/');
-        return CommandDelegates.FirstOrDefault(cmd => string.Compare(cmd.Name, commandString, StringComparison.OrdinalIgnoreCase) == 0);
-    }
-
     public bool TryExecute(string commandString, Message message)
     {
-        var command = Get(commandString);
 
-        if (command == default)
+        if (TryGet(commandString, out var command) == false)
             return false;
 
         Logger.Log($"{message.From.Username} executing command {command.Name}");
@@ -127,8 +115,17 @@ public class ChatCommandManager : CommandManager<ChatCommandInfo>
             
             var attr = method.GetCustomAttribute<ChatCommandAttribute>();
             CommandDelegates.Add(new ChatCommandInfo(command, attr));
-            Logger.Log($"Registered chatcommand {attr?.Name} as {method.DeclaringType?.FullName}.{method.Name}" + (attr.Hidden ? " (hidden)" : ""));
+            Logger.Log($"Registered chat-command {attr?.Name} as {method.DeclaringType?.FullName}.{method.Name}" + (attr.Hidden ? " (hidden)" : ""));
         }
+    }
+    
+    private bool TryGet(string commandString, out ChatCommandInfo info)
+    {
+        if (commandString.StartsWith('/'))
+            commandString = commandString.TrimStart('/');
+            
+        info = CommandDelegates.FirstOrDefault(cmd => cmd.Name == commandString);
+        return info != null;
     }
 }
 

@@ -5,7 +5,6 @@ using Example.Weather;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InputFiles;
 
 namespace Example;
 
@@ -26,7 +25,12 @@ public class App
 		_client = new TelegramBotClient(_configuration.Token);
 		_commands = new ChatCommandManager(_client);
 
-		_commandContainers = new object[] {new WeatherForecaster(_configuration.OpenWeatherToken), new BasicCommands(), this};
+		_commandContainers = new object[]
+		{
+			new WeatherForecaster(_configuration.OpenWeatherToken),
+			new BasicCommands(),
+			this
+		};
 
 		_listener.UpdateReceived += update => Task.Run(() => OnUpdateReceived(update));
 	}
@@ -48,33 +52,26 @@ public class App
 	private void OnUpdateReceived(Update update)
 	{
 		var message = update.Message;
-		
-		if (message == null)
-		{
-			Logger.Log("Message is null or update type is not Message", LogSeverity.Error);
-			return;
-		}
 
-		if (message.Type != MessageType.Text || message.Text == null)
+		if (message == null || message.Type != MessageType.Text || message.Text == null)
 		{
-			Logger.Log($"Message should be {UpdateType.Message}/{MessageType.Text}, not {message.Type}", LogSeverity.Error);
+			Logger.Log($"Message should be {UpdateType.Message}/{MessageType.Text} but given {(message == null ? "null" : message.Type)}", LogSeverity.Error);
 			return;
 		}
 
 		if (message.Text[0] != '/')
 			return;
 
-		var result = _commands.TryExecute(message.Text.Split(' ')[0], message);
-
-		if (result == false)
+		var substring = message.Text.Split(' ')[0];
+		if (_commands.TryExecute(substring, message) == false)
 			_ = _client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
 	}
 	
 	[ChatCommand("start", "start command", true)]
-	private async Task<bool> OnStartCommand(ChatCommandContext context)
+	private Task<bool> OnStartCommand(ChatCommandContext context)
 	{
-		await context.Client.SendTextMessageAsync(context.Message.Chat.Id, "Привет!");
-		return true;
+		_ = context.Client.SendTextMessageAsync(context.Message.Chat.Id, "Привет!");
+		return Task.FromResult(true);
 	}
 
 	private void ConfigureCommands(IEnumerable<object> targets)

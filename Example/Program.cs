@@ -6,9 +6,9 @@ namespace Example;
 public static class Program
 {
     private static bool _alreadyStopped;
-    private static readonly UpdateType[] _allowedUpdates = {
-        UpdateType.Message,
-        UpdateType.CallbackQuery
+    private static readonly UpdateType[] _allowedUpdates = 
+    {
+        UpdateType.Message
     };
 
     public static void Main()
