@@ -1,9 +1,8 @@
-﻿using Example.Logging;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
-namespace Example.Core
+namespace Example.Configuration
 {
-    public abstract class Configuration<T> where T : class, new()
+    public abstract class FileConfiguration<T> where T : class, new()
     {
         public static T Get(string path)
         {

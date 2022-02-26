@@ -1,4 +1,4 @@
-﻿namespace Example.Logging;
+﻿namespace Example;
 
 public enum LogSeverity
 {

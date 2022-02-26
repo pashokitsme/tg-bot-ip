@@ -1,5 +1,4 @@
-﻿using Example.Logging;
-using System.Reflection;
+﻿using System.Reflection;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 

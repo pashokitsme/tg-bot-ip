@@ -1,8 +1,7 @@
-﻿using Example.Logging;
-using Newtonsoft.Json;
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using Example.Configuration;
+using Newtonsoft.Json;
 using Telegram.Bot.Types;
 
 namespace Example.Core;

@@ -1,13 +1,11 @@
 ﻿using Example.Commands;
 using Example.Configuration;
-using Example.Core;
-using Example.Logging;
 using Example.Weather;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Example;
+namespace Example.Core;
 
 public class App
 {

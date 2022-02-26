@@ -1,13 +1,14 @@
 ﻿using Example.Configuration;
-using Example.Logging;
+using Example.Core;
 using Telegram.Bot.Types.Enums;
 
 namespace Example;
 
 public static class Program
 {
+    private const string CONFIG_PATH = "config.json";
+    
     private static bool _alreadyStopped;
-    private static readonly string _configPath = "config.json";
     private static readonly UpdateType[] _allowedUpdates = 
     {
         UpdateType.Message
@@ -22,7 +23,6 @@ public static class Program
         
         AppDomain.CurrentDomain.ProcessExit += (_, _) => OnStop(app);
         Console.CancelKeyPress += (_, _) => OnStop(app);
-        AppDomain.CurrentDomain.UnhandledException += OnException;
 
         app.StartAsync(_allowedUpdates);
         Thread.Sleep(-1);
@@ -30,20 +30,14 @@ public static class Program
 
     private static ITelegramBotConfiguration GetRelevantConfiguration()
     {
-        var isHeroku = Environment.GetEnvironmentVariable("IS_HEROKU");
-        if (isHeroku is null or "false")
+        if (Environment.GetEnvironmentVariable("IS_HEROKU") is null or "false")
         {
-            Logger.Log($"Using {_configPath}");
-            return TelegramBotConfiguration.Get(_configPath);
+            Logger.Log($"Using {CONFIG_PATH}");
+            return FileConfiguration.Get(CONFIG_PATH);
         }
 
         Logger.Log("Using enviroment");
         return new TelegramEnviromentConfiguration();
-    }
-
-    private static void OnException(object sender, UnhandledExceptionEventArgs args)
-    {
-        Logger.Log($"Unhandled Exception!", LogSeverity.Error);
     }
 
     private static void OnStop(App app)
