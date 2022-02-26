@@ -2,20 +2,9 @@
 
 public class TelegramEnviromentConfiguration : ITelegramBotConfiguration
 {
-	public string Token { get; }
-	public string Webhook { get; }
-	public string ListeningUrl { get; }
-	public string Route { get; }
-	public string OpenWeatherToken { get; }
-
-	public TelegramEnviromentConfiguration()
-	{
-		Token = Environment.GetEnvironmentVariable("token");
-		Webhook = Environment.GetEnvironmentVariable("webhook");
-		Route = Environment.GetEnvironmentVariable("route");
-		OpenWeatherToken = Environment.GetEnvironmentVariable("open-weather-token");
-		
-		var url = ListeningUrl = Environment.GetEnvironmentVariable("listening-url");
-		ListeningUrl = string.Format(url, Environment.GetEnvironmentVariable("PORT"));
-	}
+	public string Token { get; } = Environment.GetEnvironmentVariable("token");
+	public string Webhook { get; } = Environment.GetEnvironmentVariable("webhook");
+	public string ListeningUrl { get; } = Environment.GetEnvironmentVariable("listening-url");
+	public string Route { get; } = Environment.GetEnvironmentVariable("route");
+	public string OpenWeatherToken { get; } = Environment.GetEnvironmentVariable("openweather-token");
 }

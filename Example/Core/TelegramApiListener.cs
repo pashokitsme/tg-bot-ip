@@ -22,7 +22,7 @@ public class TelegramApiListener
 
     public void Start()
     {
-        Logger.Log($"Listening port {_configuration.ListeningUrl}. Expected route {_configuration.Route}");
+        Logger.Log($"Listening {_configuration.ListeningUrl}. Expected route {_configuration.Route}");
         _listener.Start();
         _listener.BeginGetContext(OnReceivedRequest, _listener);
     }

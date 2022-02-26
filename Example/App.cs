@@ -45,7 +45,6 @@ public class App
 
 	public void Stop()
 	{
-		RemoveWebhookAsync().Wait();
 		_listener.Stop();
 	}
 
@@ -68,7 +67,7 @@ public class App
 	}
 	
 	[ChatCommand("start", "start command", true)]
-	private Task<bool> OnStartCommand(ChatCommandContext context)
+	private static Task<bool> OnStartCommand(ChatCommandContext context)
 	{
 		_ = context.Client.SendTextMessageAsync(context.Message.Chat.Id, "Привет!");
 		return Task.FromResult(true);
@@ -82,7 +81,7 @@ public class App
 
 	private async Task SetupWebhookAsync(IEnumerable<UpdateType> allowedUpdates)
 	{
-		await _client.SetWebhookAsync(_configuration.Webhook, allowedUpdates: allowedUpdates, dropPendingUpdates: true);
+		await _client.SetWebhookAsync(_configuration.Webhook, allowedUpdates: allowedUpdates);
 		var webhook = await _client.GetWebhookInfoAsync();
 		Logger.Log($"Webhook binded to {webhook.Url}");
 	}

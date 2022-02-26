@@ -5,21 +5,17 @@ namespace Example.Configuration;
 
 public class TelegramBotConfiguration : Configuration<TelegramBotConfiguration>, ITelegramBotConfiguration
 {
-    [JsonProperty("bot-token"), JsonRequired]
-    public string Token { get; set; } = "<your_token>";
+	[JsonProperty("bot-token"), JsonRequired]
+	public string Token { get; set; } = "<your_token>";
 
-    [JsonProperty("webhook"), JsonRequired]
-    public string Webhook { get; set; } = "https://example.com/<your_route>/";
+	[JsonProperty("webhook"), JsonRequired]
+	public string Webhook { get; set; } = "https://example.com/<your_route>/";
 
-    [JsonProperty("listening-port"), JsonRequired]
-    public string ListeningUrl { get; set; } = "http://localhost:5000/";
+	[JsonProperty("listening-url"), JsonRequired]
+	public string ListeningUrl { get; set; } = "http://localhost:5000/";
 
-    [JsonProperty("route"), JsonRequired]
-    public string Route { get; set; } = "/<your_route>/";
+	[JsonProperty("route"), JsonRequired] public string Route { get; set; } = "/<your_route>/";
 
-    [JsonProperty("openweather-token"), JsonRequired]
-    public string OpenWeatherToken { get; set;  }
-    
+	[JsonProperty("openweather-token"), JsonRequired]
+	public string OpenWeatherToken { get; set; }
 };
-
-
