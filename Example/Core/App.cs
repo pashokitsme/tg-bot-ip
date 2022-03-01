@@ -16,6 +16,8 @@ public class App
 
 	private readonly object[] _commandContainers;
 
+	private bool _run = false;
+
 	public App(ITelegramBotConfiguration configuration)
 	{
 		_configuration = configuration;
@@ -33,20 +35,24 @@ public class App
 		_listener.UpdateReceived += update => Task.Run(() => OnUpdateReceived(update));
 	}
 
-	public async void StartAsync(IEnumerable<UpdateType> allowedUpdates)
+	public async void StartAsync(UpdateType[] allowedUpdates)
 	{
 		ConfigureCommands(_commandContainers);
 		await SetupWebhookAsync(allowedUpdates);
 		await SetupBotCommandsAsync();
 		_listener.Start();
+		_run = true;
 	}
 
-	public void Stop()
-	{
-		_listener.Stop();
-	}
+    public void Stop()
+    {
+        if (_run == true)
+            _listener.Stop();
 
-	private void OnUpdateReceived(Update update)
+        _run = false;
+    }
+
+    private void OnUpdateReceived(Update update)
 	{
 		var message = update.Message;
 
@@ -71,13 +77,13 @@ public class App
 		return Task.FromResult(true);
 	}
 
-	private void ConfigureCommands(IEnumerable<object> targets)
+    private void ConfigureCommands(object[] targets)
 	{
 		foreach (var target in targets)
 			_commands.Register(target);
 	}
 
-	private async Task SetupWebhookAsync(IEnumerable<UpdateType> allowedUpdates)
+	private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)
 	{
 		await _client.SetWebhookAsync(_configuration.Webhook, allowedUpdates: allowedUpdates);
 		var webhook = await _client.GetWebhookInfoAsync();

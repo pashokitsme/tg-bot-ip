@@ -21,8 +21,8 @@ public static class Program
         var config = GetRelevantConfiguration();
         var app = new App(config);
         
-        AppDomain.CurrentDomain.ProcessExit += (_, _) => OnStop(app);
-        Console.CancelKeyPress += (_, _) => OnStop(app);
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => app.Stop();
+        Console.CancelKeyPress += (_, _) => app.Stop();
 
         app.StartAsync(_allowedUpdates);
         Thread.Sleep(-1);
@@ -33,19 +33,10 @@ public static class Program
         if (Environment.GetEnvironmentVariable("IS_HEROKU") is null or "false")
         {
             Logger.Log($"Using {CONFIG_PATH}");
-            return FileConfiguration.Get(CONFIG_PATH);
+            return TelegramJsonConfiguration.Get(CONFIG_PATH);
         }
 
         Logger.Log("Using enviroment");
         return new TelegramEnviromentConfiguration();
-    }
-
-    private static void OnStop(App app)
-    {
-        if (_alreadyStopped)
-            return;
-
-        _alreadyStopped = true;
-        app.Stop();
     }
 }

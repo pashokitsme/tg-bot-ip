@@ -53,10 +53,7 @@ public class ChatCommandInfo
         _attribute = attribute;
     }
 
-    public bool Execute(TelegramBotClient client, Message message)
-    {
-        return _command(new ChatCommandContext(client, message)).GetAwaiter().GetResult();
-    }
+    public bool Execute(TelegramBotClient client, Message message) => _command(new ChatCommandContext(client, message)).GetAwaiter().GetResult();
 }
 
 public class ChatCommandManager : CommandManager<ChatCommandInfo>
@@ -83,7 +80,6 @@ public class ChatCommandManager : CommandManager<ChatCommandInfo>
 
     public bool TryExecute(string commandString, Message message)
     {
-
         if (TryGet(commandString, out var command) == false)
             return false;
 
