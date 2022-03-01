@@ -1,6 +1,6 @@
 ﻿using Example.Commands;
+using Example.Commands.Weather;
 using Example.Configuration;
-using Example.Weather;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
