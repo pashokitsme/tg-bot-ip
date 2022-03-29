@@ -10,6 +10,7 @@
 		<ReferenceOutputAssembly>False</ReferenceOutputAssembly>
 		<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
 		<EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild>
+		<BaseOutputPath>bin\</BaseOutputPath>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -22,22 +23,18 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Remove="UserStates\WordsGame\nouns.txt" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Include="UserStates\WordsGame\nouns.txt">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </Content>
-	</ItemGroup>
-
-	<ItemGroup>
 	  <None Include="..\.editorconfig" Link=".editorconfig" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 		<PackageReference Include="Telegram.Bot" Version="17.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="nouns.txt">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>
