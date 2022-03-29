@@ -7,9 +7,8 @@ namespace Example;
 public static class Program
 {
     private const string CONFIG_PATH = "config.json";
-    
-    private static bool _alreadyStopped;
-    private static readonly UpdateType[] _allowedUpdates = 
+
+    private static readonly UpdateType[] _allowedUpdates =
     {
         UpdateType.Message
     };
@@ -20,7 +19,7 @@ public static class Program
 
         var config = GetRelevantConfiguration();
         var app = new App(config);
-        
+
         AppDomain.CurrentDomain.ProcessExit += (_, _) => app.Stop();
         Console.CancelKeyPress += (_, _) => app.Stop();
 

@@ -6,8 +6,8 @@
 		<PreserveCompilationContext>false</PreserveCompilationContext>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>disable</Nullable>
-		<DebugType>full</DebugType>
-		<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+		<DebugType>portable</DebugType>
+		<ReferenceOutputAssembly>False</ReferenceOutputAssembly>
 		<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
 		<EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild>
 	</PropertyGroup>
@@ -20,6 +20,16 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<FileAlignment>512</FileAlignment>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="UserStates\WordsGame\nouns.txt" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="UserStates\WordsGame\nouns.txt">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
 
 	<ItemGroup>
 	  <None Include="..\.editorconfig" Link=".editorconfig" />

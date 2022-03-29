@@ -1,5 +1,5 @@
-﻿using System.Text;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 
@@ -14,7 +14,7 @@ public class WeatherForecaster
 
     public WeatherForecaster(string token) => _token = token;
 
-    [ChatCommand("weather", "Текущая погода, нужно указать город")]
+    [ChatCommand("/weather", "Текущая погода, нужно указать город")]
     private async Task<bool> WeatherForecastTodayCommand(ChatCommandContext context)
     {
         if (context.Args.Length < 1)
@@ -30,7 +30,10 @@ public class WeatherForecaster
             .FirstOrDefault();
 
         if (info == null)
+        {
+            _ = context.Client.DeleteMessageAsync(message.Chat.Id, message.MessageId);
             return false;
+        }
 
         var response = FormatWeatherInfo(await GetWeatherInfo(info.Lat, info.Lon));
         _ = context.Client.EditMessageTextAsync(message.Chat.Id, message.MessageId, response, ParseMode.Markdown);

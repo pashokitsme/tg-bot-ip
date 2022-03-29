@@ -87,39 +87,51 @@ public class ChatCommandManager : CommandManager<ChatCommandInfo>
         var result = command.Execute(Client, message);
 
         if (result == false)
+        {
             Logger.Log($"{message.From.Username} tried to execute {command.Name} but it's failed", LogSeverity.Warning);
+            Client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
+        }
 
         return result;
     }
 
     public override void Register(object target)
     {
-        var methods = FindMethodsWithAttribute<ChatCommandAttribute>(target);
+        var methods = FindMethodsWithAttribute<ChatCommandAttribute>(target.GetType());
+        CreateDelegates(methods, target);
+    }
 
+    public void Register<T>() where T : class
+    {
+        var methods = FindMethodsWithAttribute<ChatCommandAttribute>(typeof(T))
+            .Where(method => method.IsStatic)
+            .ToList();
+        CreateDelegates(methods, null);
+    }
+
+    private void CreateDelegates(List<MethodInfo> methods, object target = null)
+    {
         foreach (var method in methods)
         {
             var commandDelegate = method.IsStatic
                 ? Delegate.CreateDelegate(typeof(ExecuteChatCommand), method, false)
                 : Delegate.CreateDelegate(typeof(ExecuteChatCommand), target, method, false);
-            
+
             if (commandDelegate is not ExecuteChatCommand command)
             {
                 Logger.Log($"{method.DeclaringType?.FullName}.{method.Name} can't be chat command", LogSeverity.Error);
                 continue;
             }
-            
+
             var attr = method.GetCustomAttribute<ChatCommandAttribute>();
             CommandDelegates.Add(new ChatCommandInfo(command, attr));
             Logger.Log($"Registered chat-command {attr?.Name} as {method.DeclaringType?.FullName}.{method.Name}" + (attr.Hidden ? " (hidden)" : ""));
         }
     }
-    
+
     private bool TryGet(string commandString, out ChatCommandInfo info)
     {
-        if (commandString.StartsWith('/'))
-            commandString = commandString.TrimStart('/');
-            
-        info = CommandDelegates.FirstOrDefault(cmd => cmd.Name == commandString);
+        info = CommandDelegates.FirstOrDefault(command => command.Name == commandString);
         return info != null;
     }
 }

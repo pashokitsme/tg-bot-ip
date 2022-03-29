@@ -1,7 +1,7 @@
-﻿using System.Net;
-using System.Text;
-using Example.Configuration;
+﻿using Example.Configuration;
 using Newtonsoft.Json;
+using System.Net;
+using System.Text;
 using Telegram.Bot.Types;
 
 namespace Example.Core;
@@ -13,15 +13,12 @@ public class TelegramApiListener
     private readonly HttpListener _listener = new();
     private readonly ITelegramBotConfiguration _configuration;
 
-    public TelegramApiListener(ITelegramBotConfiguration configuration)
-    {
-        _configuration = configuration;
-        _listener.Prefixes.Add(_configuration.ListeningUrl);
-    }
+    public TelegramApiListener(ITelegramBotConfiguration configuration) => _configuration = configuration;
 
     public void Start()
     {
         Logger.Log($"Listening {_configuration.ListeningUrl}. Expected route {_configuration.Route}");
+        _listener.Prefixes.Add(_configuration.ListeningUrl);
         _listener.Start();
         _listener.BeginGetContext(OnReceivedRequest, _listener);
     }
@@ -56,7 +53,7 @@ public class TelegramApiListener
             SetResponse(response, HttpStatusCode.NotFound);
             return;
         }
-        
+
         SetResponse(response, TryParseUpdate(request));
     }
 
@@ -68,9 +65,9 @@ public class TelegramApiListener
             var json = reader.ReadToEnd();
             var update = JsonConvert.DeserializeObject<Update>(json);
 
-            if (update == null) 
+            if (update == null)
                 throw new NullReferenceException(nameof(update));
-            
+
             UpdateReceived?.Invoke(update);
             Logger.Log($"Received update by {GetIPv4(request)}");
             return HttpStatusCode.OK;
@@ -87,7 +84,7 @@ public class TelegramApiListener
     private static void SetResponse(HttpListenerResponse response, HttpStatusCode statusCode, string message = null)
     {
         response.StatusCode = (int)statusCode;
-        message = message == null ? $"{response.StatusCode} - {response.StatusDescription}" : "";
+        message ??= $"{response.StatusCode} - {response.StatusDescription}";
         var buffer = new ReadOnlySpan<byte>(Encoding.Default.GetBytes(message));
         response.ContentLength64 = buffer.Length;
         response.OutputStream.Write(buffer);

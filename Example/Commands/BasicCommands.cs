@@ -4,14 +4,14 @@ namespace Example.Commands;
 
 public class BasicCommands
 {
-    [ChatCommand("test", "Тестовая команда"), ]
+    [ChatCommand("/test", "Тестовая команда"),]
     private static Task<bool> Test(ChatCommandContext context)
     {
         _ = context.Client.SendTextMessageAsync(context.Message.Chat.Id, "Тестовая команда, которая, кстати, работает!");
         return Task.FromResult(true);
     }
 
-    [ChatCommand("echo", "Эхо-команда, в аргументах нужно написать сообщение")]
+    [ChatCommand("/echo", "Эхо-команда, в аргументах нужно написать сообщение")]
     private static Task<bool> Echo(ChatCommandContext context)
     {
         if (context.Args.Length < 1)
