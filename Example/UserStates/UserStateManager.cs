@@ -21,7 +21,7 @@ public class UserStateManager
         _states[userId].Enter(this, userId, _client);
     }
 
-    public void TryExit<TUserState>(long userId) where TUserState : UserState, new()
+    public void ExitIfState<TUserState>(long userId) where TUserState : UserState, new()
     {
         if (_states.ContainsKey(userId) == false)
             return;

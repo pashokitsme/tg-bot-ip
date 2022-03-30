@@ -56,10 +56,7 @@ public class WordsGame : UserState
         NextWord("а");
     }
 
-    public override void Exit()
-    {
-        Client.SendTextMessageAsync(UserId, "Игра в слова закончена");
-    }
+    public override void Exit() => Client.SendTextMessageAsync(UserId, "Игра в слова закончена");
 
     public override void Update(Message message)
     {
@@ -100,7 +97,7 @@ public class WordsGame : UserState
         Client.SendTextMessageAsync(UserId, $"Следующее слово *{next}*", ParseMode.Markdown);
     }
 
-    private char GetLastValideLetter(string word)
+    private static char GetLastValideLetter(string word)
     {
         var chars = word.ToCharArray();
         for (var i = chars.Length - 1; i >= 0; i--)

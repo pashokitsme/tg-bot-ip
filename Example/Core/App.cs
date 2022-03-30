@@ -68,10 +68,7 @@ public class App
         _commands.TryExecute(substring, message);
 
         if (_states.Has(message.From.Id))
-        {
-            Logger.Log($"User has state, updating");
             _states.Update(message.From.Id, message);
-        }
     }
 
     private void OnWordsGameCalled(long userId)
@@ -79,7 +76,7 @@ public class App
         if (_states.Has(userId))
         {
             if (_states.Get(userId) is WordsGame)               
-                _states.TryExit<WordsGame>(userId);
+                _states.ExitIfState<WordsGame>(userId);
             return;
         }
         
