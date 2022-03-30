@@ -1,4 +1,5 @@
 ﻿using Example.Commands;
+using System;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -44,7 +45,6 @@ public class WordsGame : UserState
     }
 
     #endregion
-
     private HashSet<string> _used;
     private char _letter;
 
@@ -95,6 +95,7 @@ public class WordsGame : UserState
         _used.Add(next);
 
         Client.SendTextMessageAsync(UserId, $"Следующее слово *{next}*", ParseMode.Markdown);
+        Logger.Log($"WordsGame[user {UserId}] update: {word} -> {next}");
     }
 
     private static char GetLastValideLetter(string word)
@@ -112,9 +113,9 @@ public class WordsGame : UserState
 
     private string GetNotUsedWord(char letter)
     {
-        var word = _words[letter][Random.Shared.Next(0, _words.Count)];
+        var word = _words[letter][Random.Shared.Next(0, _words[letter].Count)];
         while (_used.Contains(word))
-            word = _words[letter][Random.Shared.Next(0, _words.Count)];
+            word = _words[letter][Random.Shared.Next(0, _words[letter].Count)];
 
         return word;
     }
