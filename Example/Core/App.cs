@@ -2,7 +2,6 @@
 using Example.Commands.Weather;
 using Example.Configuration;
 using Example.UserStates;
-using Example.UserStates.WordsGame;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -25,8 +24,6 @@ public class App
         _commands = new ChatCommandManager(_client);
         _states = new UserStateManager(_client);
 
-        WordsGame.Called += OnWordsGameCalled;
-
         ConfigureCommands(new object[]
         {
             new WeatherForecaster(_configuration.OpenWeatherToken),
@@ -47,11 +44,7 @@ public class App
     public void Stop() => _listener.Stop();
 
     [ChatCommand("/start", "start command", true)]
-    private static Task<bool> OnStartCommand(ChatCommandContext context)
-    {
-        _ = context.Client.SendTextMessageAsync(context.Message.Chat.Id, "Привет!");
-        return Task.FromResult(true);
-    }
+    private static void OnStartCommand(ChatCommandContext context) => context.Client.SendTextMessageAsync(context.Message.Chat.Id, "Привет!");
 
     private void OnUpdateReceived(Update update)
     {
@@ -65,22 +58,26 @@ public class App
 
         var substring = message.Text.Split(' ')[0];
 
-        _commands.TryExecute(substring, message);
+        if (substring[0] == '/')
+        {
+            _commands.Execute(substring, message);
+            return;
+        }
 
         if (_states.Has(message.From.Id))
             _states.Update(message.From.Id, message);
     }
 
-    private void OnWordsGameCalled(long userId)
+    private void EnterOrExitState<TState>(long userId) where TState : UserState, new()
     {
         if (_states.Has(userId))
         {
-            if (_states.Get(userId) is WordsGame)               
-                _states.ExitIfState<WordsGame>(userId);
+            if (_states.Get(userId) is TState)
+                _states.ExitIfState<TState>(userId);
             return;
         }
-        
-        _states.Enter<WordsGame>(userId);
+
+        _states.Enter<TState>(userId);
     }
 
     private void ConfigureCommands(object[] targets)
@@ -88,7 +85,13 @@ public class App
         foreach (var target in targets)
             _commands.Register(target);
 
-        _commands.Register<WordsGame>();
+        _commands.Register(
+            new ChatCommandAttribute("/words", "Игра в слова"), 
+            ctx => EnterOrExitState<WordsGame>(ctx.Message.From.Id));
+
+        _commands.Register(
+            new ChatCommandAttribute("/math", "Устный счёт"),
+            ctx => EnterOrExitState<MathGame>(ctx.Message.From.Id));
     }
 
     private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)

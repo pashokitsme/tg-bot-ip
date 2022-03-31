@@ -4,13 +4,11 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Example.UserStates.WordsGame;
+namespace Example.UserStates;
 
 public class WordsGame : UserState
 {
     #region static
-
-    public static event Action<long> Called;
 
     private static readonly Dictionary<char, List<string>> _words = new();
     private static readonly char[] _blackList = new char[]
@@ -19,13 +17,6 @@ public class WordsGame : UserState
         'ъ',
         'ы'
     };
-
-    [ChatCommand("/words", "Игра в слова")]
-    public static Task<bool> WordsGameCommand(ChatCommandContext context)
-    {
-        Called?.Invoke(context.Message.From.Id);
-        return Task.FromResult(true);
-    }
 
     static WordsGame()
     {
@@ -45,6 +36,7 @@ public class WordsGame : UserState
     }
 
     #endregion
+
     private HashSet<string> _used;
     private char _letter;
 
@@ -67,19 +59,19 @@ public class WordsGame : UserState
 
         if (word[0] != _letter)
         {
-            Client.SendTextMessageAsync(UserId, $"Слово должно быть на букву *{_letter}*", ParseMode.Markdown);
+            Client.SendTextMessageAsync(UserId, $"Слово должно быть на букву `{_letter}`", ParseMode.Markdown);
             return;
         }
 
         if (_used.Contains(word))
         {
-            Client.SendTextMessageAsync(UserId, $"Слово *{word}* уже было использовано", ParseMode.Markdown);
+            Client.SendTextMessageAsync(UserId, $"Слово `{word}` уже было использовано", ParseMode.Markdown);
             return;
         }
 
         if (_words[word[0]].Contains(word) == false)
         {
-            Client.SendTextMessageAsync(UserId, $"Я не знаю слово *{word}*", ParseMode.Markdown);
+            Client.SendTextMessageAsync(UserId, $"Я не знаю слово `{word}`", ParseMode.Markdown);
             return;
         }
 
@@ -94,7 +86,7 @@ public class WordsGame : UserState
         _used.Add(word);
         _used.Add(next);
 
-        Client.SendTextMessageAsync(UserId, $"Следующее слово *{next}*", ParseMode.Markdown);
+        Client.SendTextMessageAsync(UserId, $"Следующее слово `{next}`", ParseMode.Markdown);
         Logger.Log($"WordsGame[user {UserId}] update: {word} -> {next}");
     }
 

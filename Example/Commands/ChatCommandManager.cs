@@ -4,7 +4,7 @@ using Telegram.Bot.Types;
 
 namespace Example.Commands;
 
-public delegate Task<bool> ExecuteChatCommand(ChatCommandContext context);
+public delegate void ExecutableChatCommand(ChatCommandContext context);
 
 [AttributeUsage(AttributeTargets.Method)]
 public class ChatCommandAttribute : Attribute
@@ -44,16 +44,16 @@ public class ChatCommandInfo
     public string Description => _attribute.Description;
     public bool Hidden => _attribute.Hidden;
 
-    private readonly ExecuteChatCommand _command;
+    private readonly ExecutableChatCommand _command;
     private readonly ChatCommandAttribute _attribute;
 
-    public ChatCommandInfo(ExecuteChatCommand command, ChatCommandAttribute attribute)
+    public ChatCommandInfo(ExecutableChatCommand command, ChatCommandAttribute attribute)
     {
         _command = command;
         _attribute = attribute;
     }
 
-    public bool Execute(TelegramBotClient client, Message message) => _command(new ChatCommandContext(client, message)).GetAwaiter().GetResult();
+    public void Execute(TelegramBotClient client, Message message) => _command(new ChatCommandContext(client, message));
 }
 
 public class ChatCommandManager : CommandManager<ChatCommandInfo>
@@ -78,27 +78,25 @@ public class ChatCommandManager : CommandManager<ChatCommandInfo>
         return result;
     }
 
-    public bool TryExecute(string commandString, Message message)
+    public void Execute(string commandString, Message message)
     {
         if (TryGet(commandString, out var command) == false)
-            return false;
+            return;
 
         Logger.Log($"{message.From.Username} executing command {command.Name}");
-        var result = command.Execute(Client, message);
-
-        if (result == false)
-        {
-            Logger.Log($"{message.From.Username} tried to execute {command.Name} but it's failed", LogSeverity.Warning);
-            Client.SendTextMessageAsync(message.Chat.Id, $@"Не удалось выполнить команду {message.Text.Split(' ')[0]} 😢");
-        }
-
-        return result;
+        command.Execute(Client, message);
     }
 
     public override void Register(object target)
     {
         var methods = FindMethodsWithAttribute<ChatCommandAttribute>(target.GetType());
         CreateDelegates(methods, target);
+    }
+
+    public void Register(ChatCommandAttribute attr, ExecutableChatCommand command)
+    {
+        Logger.Log($"Registered chat-command {attr?.Name} as {command.Target.GetType().FullName}.{command.GetMethodInfo().Name}" + (attr.Hidden ? " (hidden)" : ""));
+        CommandDelegates.Add(new ChatCommandInfo(command, attr));
     }
 
     public void Register<T>() where T : class
@@ -114,10 +112,10 @@ public class ChatCommandManager : CommandManager<ChatCommandInfo>
         foreach (var method in methods)
         {
             var commandDelegate = method.IsStatic
-                ? Delegate.CreateDelegate(typeof(ExecuteChatCommand), method, false)
-                : Delegate.CreateDelegate(typeof(ExecuteChatCommand), target, method, false);
+                ? Delegate.CreateDelegate(typeof(ExecutableChatCommand), method, false)
+                : Delegate.CreateDelegate(typeof(ExecutableChatCommand), target, method, false);
 
-            if (commandDelegate is not ExecuteChatCommand command)
+            if (commandDelegate is not ExecutableChatCommand command)
             {
                 Logger.Log($"{method.DeclaringType?.FullName}.{method.Name} can't be chat command", LogSeverity.Error);
                 continue;

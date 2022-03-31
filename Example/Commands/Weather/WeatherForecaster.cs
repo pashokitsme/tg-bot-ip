@@ -15,10 +15,13 @@ public class WeatherForecaster
     public WeatherForecaster(string token) => _token = token;
 
     [ChatCommand("/weather", "Текущая погода, нужно указать город")]
-    private async Task<bool> WeatherForecastTodayCommand(ChatCommandContext context)
+    private async void WeatherForecastTodayCommand(ChatCommandContext context)
     {
         if (context.Args.Length < 1)
-            return false;
+        {
+            _ = context.Client.SendTextMessageAsync(context.Message.From.Id, "Нужно указать город");
+            return;
+        }
 
         var city = string.Join(' ', context.Args);
 
@@ -32,12 +35,12 @@ public class WeatherForecaster
         if (info == null)
         {
             _ = context.Client.DeleteMessageAsync(message.Chat.Id, message.MessageId);
-            return false;
+            _ = context.Client.SendTextMessageAsync(context.Message.From.Id, "Не удалось выполнить команду /weather 😥");
+            return;
         }
 
         var response = FormatWeatherInfo(await GetWeatherInfo(info.Lat, info.Lon));
         _ = context.Client.EditMessageTextAsync(message.Chat.Id, message.MessageId, response, ParseMode.Markdown);
-        return true;
     }
 
     private static string FormatWeatherInfo(WeatherForecastResponse weather)
