@@ -68,18 +68,6 @@ public class App
             _states.Update(message.From.Id, message);
     }
 
-    private void EnterOrExitState<TState>(long userId) where TState : UserState, new()
-    {
-        if (_states.Has(userId))
-        {
-            if (_states.Get(userId) is TState)
-                _states.ExitIfState<TState>(userId);
-            return;
-        }
-
-        _states.Enter<TState>(userId);
-    }
-
     private void ConfigureCommands(object[] targets)
     {
         foreach (var target in targets)
@@ -87,11 +75,11 @@ public class App
 
         _commands.Register(
             new ChatCommandAttribute("/words", "Игра в слова"), 
-            ctx => EnterOrExitState<WordsGame>(ctx.Message.From.Id));
+            ctx => _states.Enter<WordsGame>(ctx.Message.From.Id));
 
         _commands.Register(
             new ChatCommandAttribute("/math", "Устный счёт"),
-            ctx => EnterOrExitState<MathGame>(ctx.Message.From.Id));
+            ctx => _states.Enter<MathGame>(ctx.Message.From.Id));
     }
 
     private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)

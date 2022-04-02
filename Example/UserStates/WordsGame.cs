@@ -40,17 +40,17 @@ public class WordsGame : UserState
     private HashSet<string> _used;
     private char _letter;
 
-    public override async void Enter(UserStateManager manager, long userId, TelegramBotClient client)
+    public override async Task Enter(UserStateManager manager, long userId, TelegramBotClient client)
     {
-        base.Enter(manager, userId, client);
-        await Client.SendTextMessageAsync(userId, "Игра в слова начата. Для выхода нужно ввести команду ещё раз");
+        _ = base.Enter(manager, userId, client);
+        await Client.SendTextMessageAsync(userId, "Для выхода нужно ввести команду /words ещё раз");
         _used = new();
-        NextWord("а");
+        await NextWord("а");
     }
 
-    public override void Exit() => Client.SendTextMessageAsync(UserId, "Игра в слова закончена");
+    public override async Task Exit() => await Client.SendTextMessageAsync(UserId, "Игра в слова закончена");
 
-    public override void Update(Message message)
+    public override async void Update(Message message)
     {
         if (message == null || string.IsNullOrEmpty(message.Text) || message.Text[0] == '/')
             return;
@@ -59,26 +59,26 @@ public class WordsGame : UserState
 
         if (word[0] != _letter)
         {
-            Client.SendTextMessageAsync(UserId, $"Слово должно быть на букву `{_letter}`", ParseMode.Markdown);
+            await Client.SendTextMessageAsync(UserId, $"Слово должно быть на букву `{_letter}`", ParseMode.Markdown);
             return;
         }
 
         if (_used.Contains(word))
         {
-            Client.SendTextMessageAsync(UserId, $"Слово `{word}` уже было использовано", ParseMode.Markdown);
+            await Client.SendTextMessageAsync(UserId, $"Слово `{word}` уже было использовано", ParseMode.Markdown);
             return;
         }
 
         if (_words[word[0]].Contains(word) == false)
         {
-            Client.SendTextMessageAsync(UserId, $"Я не знаю слово `{word}`", ParseMode.Markdown);
+            await Client.SendTextMessageAsync(UserId, $"Я не знаю слово `{word}`", ParseMode.Markdown);
             return;
         }
 
-        NextWord(word);
+        await NextWord(word);
     }
 
-    private void NextWord(string word)
+    private async Task NextWord(string word)
     {
         var next = GetNotUsedWord(GetLastValideLetter(word));
         _letter = GetLastValideLetter(next);
@@ -86,7 +86,7 @@ public class WordsGame : UserState
         _used.Add(word);
         _used.Add(next);
 
-        Client.SendTextMessageAsync(UserId, $"Следующее слово `{next}`", ParseMode.Markdown);
+        await Client.SendTextMessageAsync(UserId, $"Следующее слово `{next}`", ParseMode.Markdown);
         Logger.Log($"WordsGame[user {UserId}] update: {word} -> {next}");
     }
 

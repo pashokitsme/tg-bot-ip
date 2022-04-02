@@ -9,14 +9,16 @@ public abstract class UserState
     protected long UserId { get; private set; }
     protected UserStateManager Manager;
 
-    public virtual void Enter(UserStateManager manager, long userId, TelegramBotClient client)
+    public virtual Task Enter(UserStateManager manager, long userId, TelegramBotClient client)
     {
         Client = client;
         UserId = userId;
         Manager = manager;
+
+        return Task.CompletedTask;
     }
 
     public abstract void Update(Message message);
     
-    public abstract void Exit();
+    public abstract Task Exit();
 }

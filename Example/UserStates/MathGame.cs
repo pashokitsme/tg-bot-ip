@@ -1,5 +1,4 @@
-﻿using Example.Commands;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -63,36 +62,34 @@ public class MathGame : UserState
     private MathProblem _current;
     private int _solved;
 
-    public override void Enter(UserStateManager manager, long userId, TelegramBotClient client)
+    public override async Task Enter(UserStateManager manager, long userId, TelegramBotClient client)
     {
-        base.Enter(manager, userId, client);
-        Next();
+        _ = base.Enter(manager, userId, client);
+        await Client.SendTextMessageAsync(userId, $"Для завершения игры нужно ввести команду /math ещё раз");
+        await NextProblem();
     }
 
-    public override void Exit()
-    {
-        Client.SendTextMessageAsync(UserId, $"Решено: `{_solved}`", ParseMode.Markdown);
-    }
+    public override async Task Exit() => await Client.SendTextMessageAsync(UserId, $"Игра закончена. Решено: `{_solved}`", ParseMode.Markdown);
 
-    public override void Update(Message message)
+    public override async void Update(Message message)
     {
         if (int.TryParse(message.Text, out var answer) == false)
         {
-            Client.SendTextMessageAsync(UserId, "В ответе должно быть `целое число`", ParseMode.Markdown);
+            await Client.SendTextMessageAsync(UserId, "В ответе должно быть `целое число`", ParseMode.Markdown);
             return;
         }
 
         if (_current.Solve(answer) == false)
         {
-            Client.SendTextMessageAsync(UserId, "Ответ неверный");
+            await Client.SendTextMessageAsync(UserId, "Ответ неверный");
             return;
         }
 
         _solved++;
-        Next();
+        await NextProblem();
     }
 
-    private void Next()
+    private async Task NextProblem()
     {
         _current = MathProblem.Create();
 
@@ -104,6 +101,6 @@ public class MathGame : UserState
             _ => throw new NotImplementedException(),
         };
 
-        Client.SendTextMessageAsync(UserId, $"{_current.First} {operation} {_current.Second} = `?`", ParseMode.Markdown);
+        await Client.SendTextMessageAsync(UserId, $"{_current.First} {operation} {_current.Second} = `?`", ParseMode.Markdown);
     }
 }

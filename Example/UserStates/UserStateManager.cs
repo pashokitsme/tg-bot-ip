@@ -10,15 +10,15 @@ public class UserStateManager
 
     public UserStateManager(TelegramBotClient client) => _client = client;
 
-    public void Enter<TUserState>(long userId) where TUserState : UserState, new()
+    public async void Enter<TUserState>(long userId) where TUserState : UserState, new()
     {
         Logger.Log($"Entering {typeof(TUserState)} for [{userId}]");
 
         if (_states.ContainsKey(userId))
-            _states[userId].Exit();
+            await _states[userId].Exit();
 
         _states[userId] = new TUserState();
-        _states[userId].Enter(this, userId, _client);
+        await _states[userId].Enter(this, userId, _client);
     }
 
     public void ExitIfState<TUserState>(long userId) where TUserState : UserState, new()
@@ -30,18 +30,17 @@ public class UserStateManager
             return;
 
         Logger.Log($"Exiting from {typeof(TUserState)} for [{userId}]");
-
         Exit(userId);
     }
 
-    public void Exit(long userId)
+    public async void Exit(long userId)
     {
         Logger.Log($"Exiting from state for user [{userId}]");
 
         if (_states.ContainsKey(userId) == false)
             return;
 
-        _states[userId].Exit();
+        await _states[userId].Exit();
         _states.Remove(userId);
     }
 
