@@ -98,9 +98,9 @@ public class MathGame : UserState
             MathOperation.Add => '+',
             MathOperation.Subtract => '-',
             MathOperation.Multiply => '*',
-            _ => throw new NotImplementedException(),
+            _ => '?',
         };
 
-        await Client.SendTextMessageAsync(UserId, $"{_current.First} {operation} {_current.Second} = `?`", ParseMode.Markdown);
+        await Client.SendTextMessageAsync(UserId, $"{_current.First} {operation} {_current.Second} = <code>?</code>", ParseMode.Html);
     }
 }
