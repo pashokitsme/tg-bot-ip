@@ -10,29 +10,25 @@ public class UserStateManager
 
     public UserStateManager(TelegramBotClient client) => _client = client;
 
-    public async void Enter<TUserState>(long userId) where TUserState : UserState, new()
+    public async void EnterOrExitIfSame<TUserState>(long userId) where TUserState : UserState, new()
     {
+
+        if (_states.ContainsKey(userId) && _states[userId] is TUserState)
+        {
+            await Exit(userId);
+            return;
+        }
+
         Logger.Log($"Entering {typeof(TUserState)} for [{userId}]");
 
         if (_states.ContainsKey(userId))
-            Exit(userId);
+            await Exit(userId);
 
         _states[userId] = new TUserState();
         await _states[userId].Enter(this, userId, _client);
     }
 
-    public void EnterOrExitIfSame<TUserState>(long userId) where TUserState : UserState, new()
-    {
-        if (_states.ContainsKey(userId) && _states[userId] is TUserState)
-        {
-            Exit(userId);
-            return;
-        }
-
-        Enter<TUserState>(userId);
-    }
-
-    public void ExitIfState<TUserState>(long userId) where TUserState : UserState, new()
+    public async void ExitIfState<TUserState>(long userId) where TUserState : UserState, new()
     {
         if (_states.ContainsKey(userId) == false)
             return;
@@ -41,10 +37,10 @@ public class UserStateManager
             return;
 
         Logger.Log($"Exiting from {typeof(TUserState)} for [{userId}]");
-        Exit(userId);
+        await Exit(userId);
     }
 
-    public async void Exit(long userId)
+    public async Task Exit(long userId)
     {
         Logger.Log($"Exiting from state for user [{userId}]");
 
