@@ -75,11 +75,11 @@ public class App
 
         _commands.Register(
             new ChatCommandAttribute("/words", "Игра в слова"), 
-            ctx => _states.Enter<WordsGame>(ctx.Message.From.Id));
+            ctx => _states.EnterOrExitIfSame<WordsGame>(ctx.Message.From.Id));
 
         _commands.Register(
             new ChatCommandAttribute("/math", "Устный счёт"),
-            ctx => _states.Enter<MathGame>(ctx.Message.From.Id));
+            ctx => _states.EnterOrExitIfSame<MathGame>(ctx.Message.From.Id));
     }
 
     private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)

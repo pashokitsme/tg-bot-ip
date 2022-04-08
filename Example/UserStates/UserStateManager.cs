@@ -15,10 +15,21 @@ public class UserStateManager
         Logger.Log($"Entering {typeof(TUserState)} for [{userId}]");
 
         if (_states.ContainsKey(userId))
-            await _states[userId].Exit();
+            Exit(userId);
 
         _states[userId] = new TUserState();
         await _states[userId].Enter(this, userId, _client);
+    }
+
+    public void EnterOrExitIfSame<TUserState>(long userId) where TUserState : UserState, new()
+    {
+        if (_states.ContainsKey(userId) && _states[userId] is TUserState)
+        {
+            Exit(userId);
+            return;
+        }
+
+        Enter<TUserState>(userId);
     }
 
     public void ExitIfState<TUserState>(long userId) where TUserState : UserState, new()
