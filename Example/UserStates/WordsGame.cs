@@ -18,18 +18,6 @@ public class WordsGame : UserState
         'ы'
     };
 
-    private struct WordDefinition
-    {
-        public string Word;
-        public string Definition;
-
-        public WordDefinition(string word, string def) : this()
-        {
-            Word = word;
-            Definition = def;
-        }
-    }
-
     static WordsGame()
     {
         using var reader = new StreamReader("nouns_def.txt");

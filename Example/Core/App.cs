@@ -83,7 +83,11 @@ public class App
 
         _commands.Register(
             new ChatCommandAttribute("/stop", "Закончить игру"),
-           async ctx => await _states.Exit(ctx.Message.From.Id));
+           async ctx => await _states.Exit(ctx.Message.From.Id)); 
+        
+        _commands.Register(
+            new ChatCommandAttribute("/multiplytable", "Таблица умножения"),
+           ctx => _states.EnterOrExitIfSame<MultiplyTableGame>(ctx.Message.From.Id));
     }
 
     private async Task SetupWebhookAsync(UpdateType[] allowedUpdates)
